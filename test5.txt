@@ -1,0 +1,67 @@
+func foo() return int
+{
+    return 0;
+}
+proc Main()
+{
+    var a : int;
+    a = foo();
+}
+func foo(i, j, k : int) return int
+{
+    func fee(l, m, n : int) return bool
+    {
+        return true;
+    }
+    return 0;
+}
+proc goo(i, j, k : int)
+{
+    func fee(l, m, n : int) return bool
+    {
+        return true;
+    }
+    fee(2,3,4);
+}
+func foo() return int { return 0; }
+func foo_2() return int { return 0; }
+func f234() return int { return 0;}
+func foo(i, j, k : int; l, m, n : bool) return int { return 0; }
+proc fee(a, b : int) { }
+func fei(a, b, c : int; d, e, f : bool; g, h : int) return int { return 0; }
+func foo(i, j, k : int) return int
+{
+    func square(t : int) /% func/proc declarations %/ return int
+    {
+        var temp : int;
+        temp = t*t;
+        return 0;
+    }
+    var total : int; /% variable declarations %/
+    total = 1; /% statements %/
+    return total;
+}
+func foo() return int
+{
+    var x : int;
+    {
+        var y : int;
+        x = 1;
+        y = 2;
+        {
+            x = 2;
+        }
+        y = 3;
+    }
+    return 0;
+}
+func foo() return int
+{
+    {
+        {} /% empty code blocks are okay, although not very useful %/
+    }
+    return 0;
+}
+func foo() return int { return 0; }
+func foo_2() return int { var a: int; a = 2; return a; }
+func foo_3() return int { if (true) { return foo(); } return 0; }

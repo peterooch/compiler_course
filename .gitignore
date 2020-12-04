@@ -1,0 +1,4 @@
+result*.txt
+lex.yy.c
+y.tab.c
+test
