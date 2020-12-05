@@ -1,0 +1,4 @@
+func 9foo() return int 
+{ 
+    return 0; 
+}

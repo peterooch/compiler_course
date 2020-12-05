@@ -1,0 +1,4 @@
+proc foo(i, j, k) 
+{ 
+    i = j + k;
+}

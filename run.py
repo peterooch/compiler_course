@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import os
 
-os.system("lex scanner.lex")
+os.system("lex scanner.l")
 os.system("yacc parser.y")
 os.system("gcc -g y.tab.c -o test -ll -Ly")
 

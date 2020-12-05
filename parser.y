@@ -132,7 +132,8 @@ EXPR:
             | FUNCCALL
             | UNARYEXP
             | POINTEREXPR
-            | EXPR BINARYOP EXPR                    {$$ = mknode($2->token, 2, $1, $3);};
+            | ARITHEXPR
+            | BOOLEXPR
             ;
 VARDECL:    
               VAR VARLIST ';'                       {$$ = mknode("var", 1, $2);}
@@ -169,25 +170,21 @@ UNARYEXP:
               UNARYOPS EXPR                         {$$ = mknode($1->token, 1, $2);}
             | '|' EXPR '|'                          {$$ = mknode("|s|", 1, $2);}
             ;
-BINARYOP:   
-              ARITHOP
-            | LOGICALOP
+ARITHEXPR:    
+              EXPR DIV EXPR                         {$$ = mknode($2->token, 2, $1, $3);}
+            | EXPR MINUS EXPR                       {$$ = mknode($2->token, 2, $1, $3);}
+            | EXPR PLUS EXPR                        {$$ = mknode($2->token, 2, $1, $3);}
+            | EXPR MUL EXPR                         {$$ = mknode($2->token, 2, $1, $3);}
             ;
-ARITHOP:    
-              DIV
-            | MINUS
-            | PLUS
-            | MUL
-            ;
-LOGICALOP:  
-              AND
-            | OR
-            | EQ
-            | NE
-            | GT
-            | GE
-            | LT
-            | LE
+BOOLEXPR:  
+              EXPR AND EXPR                         {$$ = mknode($2->token, 2, $1, $3);}
+            | EXPR OR EXPR                          {$$ = mknode($2->token, 2, $1, $3);}
+            | EXPR EQ EXPR                          {$$ = mknode($2->token, 2, $1, $3);}
+            | EXPR NE EXPR                          {$$ = mknode($2->token, 2, $1, $3);}
+            | EXPR GT EXPR                          {$$ = mknode($2->token, 2, $1, $3);}
+            | EXPR GE EXPR                          {$$ = mknode($2->token, 2, $1, $3);};
+            | EXPR LT EXPR                          {$$ = mknode($2->token, 2, $1, $3);};
+            | EXPR LE EXPR                          {$$ = mknode($2->token, 2, $1, $3);};
             ;
 UNARYOPS:    
               PLUS
@@ -242,6 +239,7 @@ struct node* mknode(const char* token, int count, ...)
 {
     va_list args;
     struct node* newnode;
+    int i;
 
     newnode = (struct node*)malloc(sizeof(struct node));
     newnode->token = strdup(token);
@@ -249,7 +247,7 @@ struct node* mknode(const char* token, int count, ...)
     newnode->children = (struct node**)malloc(sizeof(struct node*) * count);
 
     va_start(args, count);
-    for (int i = 0; i < count; i++)
+    for (i = 0; i < count; i++)
         newnode->children[i] = va_arg(args, struct node*);
     va_end(args);
 
@@ -259,7 +257,7 @@ struct node* mknode(const char* token, int count, ...)
 #define isleaf(x) (x != NULL && x->nchildren == 0) 
 void printtree(struct node* tree, int spacing)
 {
-    int done = 0;
+    int i, done = 0;
     char* spaces = (char*)calloc(spacing*2+1, sizeof(char));
 
     if (!tree)
@@ -276,7 +274,7 @@ void printtree(struct node* tree, int spacing)
 
     printf(" (%s", tree->token);
 
-    for (int i = 0; i < tree->nchildren; i++)
+    for (i = 0; i < tree->nchildren; i++)
         printtree(tree->children[i], spacing + 1);
 
     printf(")");

@@ -40,11 +40,11 @@ real\*	{yylval = mkleaf(yytext); return REALPTR;}
 
 true	                        {yylval = mkleaf(yytext); return TRUE;}
 false	                        {yylval = mkleaf(yytext); return FALSE;}
-[_a-zA-Z][_a-zA-Z0-9]*	        {yylval = mkleaf(yytext); return ID;}
-\'[a-zA-Z0-9]\'		            {yylval = mkleaf(yytext); return CHARLITERAL;}
-[0-9]+	                        {yylval = mkleaf(yytext); return DECLITERAL;}
+[a-zA-Z][_a-zA-Z0-9]*	        {yylval = mkleaf(yytext); return ID;}
+\'.\'		                    {yylval = mkleaf(yytext); return CHARLITERAL;}
+0|[1-9][0-9]*	                {yylval = mkleaf(yytext); return DECLITERAL;}
 0[Xx][0-9A-F]+		            {yylval = mkleaf(yytext); return HEXLITERAL;}
-[0-9]+\.[0-9]*+	                {yylval = mkleaf(yytext); return REALLITERAL;} 
+[0-9]+\.[0-9]*	                {yylval = mkleaf(yytext); return REALLITERAL;} 
 [0-9]+\.[0-9]*[\-\+][Ee][0-9]+	{yylval = mkleaf(yytext); return REALLITERAL;} 
 \".*\"		                    {yylval = mkleaf(yytext); return STRINGLITERAL;}
 [ \t]+                          ;

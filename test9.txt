@@ -1,0 +1,12 @@
+proc f()
+{
+    var m,n: int ;
+    while(n > 0)
+    {
+        while (m > 5)
+        {
+            n = n - 1;
+        }
+        m = m + 1;
+    }
+}
