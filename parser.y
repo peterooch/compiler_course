@@ -12,7 +12,7 @@ typedef struct node
 } node;
 struct node* mkleaf(const char* token);
 struct node* mknode(const char* token, int count, ...);
-void printtree(struct node* tree);
+void printtree(struct node* tree, int spacing);
 #define YYSTYPE struct node*
 %}
 /* Keywords Lexemes */
@@ -76,10 +76,10 @@ void printtree(struct node* tree);
 
 %%
 S:          
-              PROG                                  {printtree($1);}
+              PROG                                  {printtree($1, 0);}
             ;
 PROG:         
-              PROG FUNCDECL                         {$$ = mknode("code", 2, $1, $2);}
+              PROG FUNCDECL                         {$$ = mknode("code ", 2, $1, $2);}
             | FUNCDECL
             ;
 FUNCDECL:    
@@ -93,21 +93,21 @@ FUNCEXPR:
               FUNC ID '(' PARAMLIST ')' RETURN TYPE  '{' BLOCK '}'  {$$ = mknode("func", 4, $2, $7, $4, $9);}
             ;
 PARAMLIST:   
-              VARLIST ';' PARAMLIST                 {$$ = mknode("paramlist", 2, $1, $3);}
-            | VARLIST                               {$$ = mknode("paramlist", 1, $1);}
+              VARLIST ';' PARAMLIST                 {$$ = mknode("paramlist ", 2, $1, $3);}
+            | VARLIST                               {$$ = mknode("paramlist ", 1, $1);}
             | /*EMPTY*/                             {$$ = mkleaf("paramlist none");}
             ;         
 BLOCK:      
-              DECLARATION INNERBLOCK                {$$ = mknode("block", 2, $1, $2);}
+              DECLARATION INNERBLOCK                {$$ = mknode("block ", 2, $1, $2);}
             ;
 INNERBLOCK: 
-              INNERBLOCK STATEMENT                  {$$ = mknode("innerblock", 2, $1, $2);}
-            | INNERBLOCK '{' BLOCK '}'              {$$ = mknode("innerblock", 2, $1, $3);} 
+              INNERBLOCK STATEMENT                  {$$ = mknode("innerblock ", 2, $1, $2);}
+            | INNERBLOCK '{' BLOCK '}'              {$$ = mknode("innerblock ", 2, $1, $3);} 
             | /*EMPTY*/                             {$$ = NULL;}
             ;
 DECLARATION: 
-              DECLARATION VARDECL                   {$$ = mknode("declarations", 2, $1, $2);}
-            | DECLARATION FUNCDECL                  {$$ = mknode("declarations", 2, $1, $2);}
+              DECLARATION VARDECL                   {$$ = mknode("declarations ", 2, $1, $2);}
+            | DECLARATION FUNCDECL                  {$$ = mknode("declarations ", 2, $1, $2);}
             | /*EMPTY*/                             {$$ = NULL;}
             ;
 STATEMENT:   
@@ -139,9 +139,9 @@ VARDECL:
               VAR VARLIST ';'                       {$$ = mknode("var", 1, $2);}
             ;
 VARLIST:    
-              ID ',' VARLIST                        {$$ = mknode("varlist", 2, $1, $3);}
-            | ID ':' STRING '[' DECLITERAL ']'      {$$ = mknode("varlist", 2, $1, mknode("string", 1, $5));}
-            | ID ':' TYPE                           {$$ = mknode("varlist", 2, $1, $3);} 
+              ID ',' VARLIST                        {$$ = mknode("varlist ", 2, $1, $3);}
+            | ID ':' STRING '[' DECLITERAL ']'      {$$ = mknode("varlist ", 2, $1, mknode("string", 1, $5));}
+            | ID ':' TYPE                           {$$ = mknode("varlist ", 2, $1, $3);} 
             ;
 IFELSE:     
               IF '(' EXPR ')' '{' BLOCK '}' ELSE '{' BLOCK '}'   {$$ = mknode("ifelse", 3, $3 ,$6, $10);}  
@@ -156,8 +156,8 @@ FUNCCALL:
               ID '(' ARGS ')'                       {$$ = mknode("call", 2, $1, $3);}
             ;
 ARGS:       
-              EXPR ',' ARGS                         {$$ = mknode("args", 2, $1, $3);}                            
-            | EXPR                                  {$$ = mknode("args", 1, $1);} 
+              EXPR ',' ARGS                         {$$ = mknode("args ", 2, $1, $3);}                            
+            | EXPR                                  {$$ = mknode("args ", 1, $1);} 
             | /*EMPTY*/                             {$$ = mkleaf("args none");}
             ;
 POINTEREXPR:
@@ -239,52 +239,68 @@ struct node* mknode(const char* token, int count, ...)
 {
     va_list args;
     struct node* newnode;
-    int i;
+    struct node** children;
+    int i, j, toklen, copied;
 
     newnode = (struct node*)malloc(sizeof(struct node));
+    children = (struct node**)malloc(sizeof(struct node*) * count);
     newnode->token = strdup(token);
     newnode->nchildren = count;
-    newnode->children = (struct node**)malloc(sizeof(struct node*) * count);
+
+    toklen = strlen(token);
 
     va_start(args, count);
     for (i = 0; i < count; i++)
-        newnode->children[i] = va_arg(args, struct node*);
+    {
+        children[i] = va_arg(args, struct node*);
+        if (children[i] != NULL && toklen > 2 && strcmp(children[i]->token, token) == 0)
+            newnode->nchildren += children[i]->nchildren;
+    }
     va_end(args);
 
+    if (newnode->nchildren == count)
+    {
+        newnode->children = children;
+        return newnode;
+    }
+
+    newnode->children = (struct node**)malloc(sizeof(struct node*) * newnode->nchildren);
+
+    for (i = 0, copied = 0; i < count; i++)
+    {
+        if (children[i] != NULL && strcmp(children[i]->token, token) == 0)
+        {
+            for (j = 0; j < children[i]->nchildren; j++)
+                newnode->children[copied++] = children[i]->children[j];
+        }
+        else
+        {
+            newnode->children[copied++] = children[i];
+        }
+    }
+
+    free(children);
     return newnode;
 }
 
-void printnode(struct node* tree, struct node* parent, int spacing)
+void printtree(struct node* tree, int spacing)
 {
-    int i, cmp, done = 0;
+    int i, done = 0;
 
     if (tree == NULL)
         return;
 
-    cmp = (parent != NULL && 
-           strlen(tree->token) > 1 &&
-           strcmp(parent->token, tree->token) == 0);
-
-    if (tree->nchildren != 0 && !cmp)
+    if (tree->nchildren != 0)
     {
         printf("\n");
         while (done++ < spacing)
             printf("  ");
     }
 
-    if (cmp)
-        spacing--;
-    else
-        printf(" (%s", tree->token);
+    printf(" (%s", tree->token);
 
     for (i = 0; i < tree->nchildren; i++)
-        printnode(tree->children[i], tree, spacing + 1);
+        printtree(tree->children[i], spacing + 1);
 
-    if (!cmp)
-        printf(")");
-}
-
-void printtree(struct node* tree)
-{
-    printnode(tree, NULL, 0);
+    printf(")");
 }
