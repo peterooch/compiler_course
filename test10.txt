@@ -1,0 +1,1 @@
+func f2(x1,x2:real; x3: bool) return bool{ var s:string[20]; s[0] = 'a'; while(x3==x4 && x1==x2){ x1=x1 * 5; x2=x1 - 10; } x3=x1<x2; return x3;}

@@ -12,7 +12,7 @@ typedef struct node
 } node;
 struct node* mkleaf(const char* token);
 struct node* mknode(const char* token, int count, ...);
-void printtree(struct node* tree, int spacing);
+void printtree(struct node* tree);
 #define YYSTYPE struct node*
 %}
 /* Keywords Lexemes */
@@ -76,7 +76,7 @@ void printtree(struct node* tree, int spacing);
 
 %%
 S:          
-              PROG                                  {printtree($1, 0);}
+              PROG                                  {printtree($1);}
             ;
 PROG:         
               PROG FUNCDECL                         {$$ = mknode("code", 2, $1, $2);}
@@ -254,29 +254,37 @@ struct node* mknode(const char* token, int count, ...)
     return newnode;
 }
 
-#define isleaf(x) (x != NULL && x->nchildren == 0) 
-void printtree(struct node* tree, int spacing)
+void printnode(struct node* tree, struct node* parent, int spacing)
 {
-    int i, done = 0;
-    char* spaces = (char*)calloc(spacing*2+1, sizeof(char));
+    int i, cmp, done = 0;
 
-    if (!tree)
+    if (tree == NULL)
         return;
 
-    while (done < spacing)
+    cmp = (parent != NULL && 
+           strlen(tree->token) > 1 &&
+           strcmp(parent->token, tree->token) == 0);
+
+    if (tree->nchildren != 0 && !cmp)
     {
-        strcat(spaces, "  ");
-        done++;
+        printf("\n");
+        while (done++ < spacing)
+            printf("  ");
     }
 
-    if (!isleaf(tree))
-        printf("\n%s", spaces);
-
-    printf(" (%s", tree->token);
+    if (cmp)
+        spacing--;
+    else
+        printf(" (%s", tree->token);
 
     for (i = 0; i < tree->nchildren; i++)
-        printtree(tree->children[i], spacing + 1);
+        printnode(tree->children[i], tree, spacing + 1);
 
-    printf(")");
-    free(spaces);
+    if (!cmp)
+        printf(")");
+}
+
+void printtree(struct node* tree)
+{
+    printnode(tree, NULL, 0);
 }
