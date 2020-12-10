@@ -111,19 +111,19 @@ DECLARATION:
             | /*EMPTY*/                             {$$ = NULL;}
             ;
 STATEMENT:   
-              ASSIGNMENT     
+              ASSIGNMENT ';'     
             | FUNCCALL ';'
             | IFELSE
-            | RETURNST
+            | RETURNST ';'
             | WHILEEXPR
             ;
 RETURNST:   
-              RETURN EXPR ';'                       {$$ = mknode("return", 1, $2);}
+              RETURN EXPR                        {$$ = mknode("return", 1, $2);}
             ;
 ASSIGNMENT:   
-              ID ASS EXPR ';'                       {$$ = mknode("=", 2, $1, $3);}
-            | ID '[' EXPR ']' ASS EXPR ';'          {$$ = mknode("[]=", 3, $1, $3, $6);}
-            | DEREF EXPR ASS EXPR ';'               {$$ = mknode("^=", 2, $2, $4);}
+              ID ASS EXPR                        {$$ = mknode("=", 2, $1, $3);}
+            | ID '[' EXPR ']' ASS EXPR           {$$ = mknode("[]=", 3, $1, $3, $6);}
+            | DEREF EXPR ASS EXPR                {$$ = mknode("^=", 2, $2, $4);}
             ;
 EXPR:       
              '(' EXPR ')'                           {$$ = $2;}    
@@ -144,9 +144,10 @@ VARLIST:
             | ID ':' TYPE                           {$$ = mknode("varlist ", 2, $1, $3);} 
             ;
 IFELSE:     
-              IF '(' EXPR ')' '{' BLOCK '}' ELSE '{' BLOCK '}'   {$$ = mknode("ifelse", 3, $3 ,$6, $10);}  
-            | IF '(' EXPR ')' '{' BLOCK '}'         {$$ = mknode("if", 2, $3, $6);}
-            | IF '(' EXPR ')' STATEMENT             {$$ = mknode("if", 2, $3, $5);}
+              IF '(' EXPR ')' '{' BLOCK '}' ELSE '{' BLOCK '}'   {$$ = mknode("ifelse", 3, $3 ,$6, $10);}
+            | IF '(' EXPR ')' STATEMENT ELSE STATEMENT           {$$ = mknode("ifelse", 3, $3, $5, $7);}
+            | IF '(' EXPR ')' '{' BLOCK '}'                      {$$ = mknode("if", 2, $3, $6);}
+            | IF '(' EXPR ')' STATEMENT                          {$$ = mknode("if", 2, $3, $5);}
             ;
 WHILEEXPR:  
               WHILE '(' EXPR ')' STATEMENT          {$$ = mknode("while", 2, $3, $5);}
