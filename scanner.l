@@ -2,51 +2,50 @@
     int lineno=1;
 %}
 %%
-bool 	{yylval = mkleaf(yytext); return BOOL;}
-char 	{yylval = mkleaf(yytext); return CHAR;}
-int 	{yylval = mkleaf(yytext); return INT;}
-real 	{yylval = mkleaf(yytext); return REAL;}
-string 	{yylval = mkleaf(yytext); return STRING;}
-if 		{yylval = mkleaf(yytext); return IF;}
-else 	{yylval = mkleaf(yytext); return ELSE;}
-while 	{yylval = mkleaf(yytext); return WHILE;}
-var 	{yylval = mkleaf(yytext); return VAR;}
-func 	{yylval = mkleaf(yytext); return FUNC;}
-proc 	{yylval = mkleaf(yytext); return PROC;}
-return 	{yylval = mkleaf(yytext); return RETURN;}
-null 	{yylval = mkleaf(yytext); return NULLPTR;}
+if 		                        {return IF;}
+else 	                        {return ELSE;}
+while 	                        {return WHILE;}
+var 	                        {return VAR;}
+func 	                        {return FUNC;}
+proc 	                        {return PROC;}
+return 	                        {return RETURN;}
 
-int\*	{yylval = mkleaf(yytext); return INTPTR;}
-char\*	{yylval = mkleaf(yytext); return CHARPTR;}
-real\*	{yylval = mkleaf(yytext); return REALPTR;}
+bool 	                        {yylval = mkleaf(tBOOL_N); return BOOL;}
+char 	                        {yylval = mkleaf(tCHAR_N); return CHAR;}
+int 	                        {yylval = mkleaf(tINT_N); return INT;}
+real 	                        {yylval = mkleaf(tREAL_N); return REAL;}
+string 	                        {yylval = mkleaf(tSTRING_N); return STRING;}
+int\*	                        {yylval = mkleaf(tINTPTR_N); return INTPTR;}
+char\*	                        {yylval = mkleaf(tCHARPTR_N); return CHARPTR;}
+real\*	                        {yylval = mkleaf(tREALPTR_N); return REALPTR;}
 
-"&&" 	{yylval = mkleaf(yytext); return AND;}
-"/"  	{yylval = mkleaf(yytext); return DIV;}
-"="		{yylval = mkleaf(yytext); return ASS;}
-"=="	{yylval = mkleaf(yytext); return EQ;}
-">"		{yylval = mkleaf(yytext); return GT;}
-">=" 	{yylval = mkleaf(yytext); return GE;}
-"<"		{yylval = mkleaf(yytext); return LT;}
-"<="	{yylval = mkleaf(yytext); return LE;}
-"-"		{yylval = mkleaf(yytext); return MINUS;}
-"!"		{yylval = mkleaf(yytext); return NOT;}
-"!="	{yylval = mkleaf(yytext); return NE;}
-"||"	{yylval = mkleaf(yytext); return OR;}
-"+"		{yylval = mkleaf(yytext); return PLUS;}
-"*"		{yylval = mkleaf(yytext); return MUL;}
-"&"		{yylval = mkleaf(yytext); return ADDRESSOF;}
-"^"		{yylval = mkleaf(yytext); return DEREF;}
+"="		                        {yylval = mkleaf(ASS_N); return ASS;}
+"&&" 	                        {yylval = mkleaf(LOGICAL_N); return AND;}
+"||"	                        {yylval = mkleaf(LOGICAL_N); return OR;}
+"=="	                        {yylval = mkleaf(COMP_N); return EQ;}
+"!="	                        {yylval = mkleaf(COMP_N); return NE;}
+">"		                        {yylval = mkleaf(COMP_N); return GT;}
+">=" 	                        {yylval = mkleaf(COMP_N); return GE;}
+"<"		                        {yylval = mkleaf(COMP_N); return LT;}
+"<="	                        {yylval = mkleaf(COMP_N); return LE;}
+"*"		                        {yylval = mkleaf(ARITH_N); return MUL;}
+"/"  	                        {yylval = mkleaf(ARITH_N); return DIV;}
+"+"		                        {yylval = mkleaf(ARITH_N); return PLUS;}
+"-"		                        {yylval = mkleaf(ARITH_N); return MINUS;}
+"!"		                        {yylval = mkleaf(NOT_N); return NOT;}
+"&"		                        {yylval = mkleaf(ADDRESS_N); return ADDRESSOF;}
+"^"		                        {yylval = mkleaf(DEREF_N); return DEREF;}
 
-
-true	                        {yylval = mkleaf(yytext); return TRUE;}
-false	                        {yylval = mkleaf(yytext); return FALSE;}
-[a-zA-Z][_a-zA-Z0-9]*	        {yylval = mkleaf(yytext); return ID;}
-\'.\'		                    {yylval = mkleaf(yytext); return CHARLITERAL;}
-0|[1-9][0-9]*	                {yylval = mkleaf(yytext); return DECLITERAL;}
-0[Xx][0-9A-F]+		            {yylval = mkleaf(yytext); return HEXLITERAL;}
-[0-9]+\.[0-9]*	                {yylval = mkleaf(yytext); return REALLITERAL;} 
-[0-9]+\.[0-9]*[\-\+][Ee][0-9]+	{yylval = mkleaf(yytext); return REALLITERAL;} 
-\".*\"		                    {yylval = mkleaf(yytext); return STRINGLITERAL;}
+null 	                        {yylval = mkleaf_str(NULLPTR_N, yytext); return NULLPTR;}
+true	                        {yylval = mkleaf_str(BOOLLITERAL_N, yytext); return TRUE;}
+false	                        {yylval = mkleaf_str(BOOLLITERAL_N, yytext); return FALSE;}
+[a-zA-Z][_a-zA-Z0-9]*	        {yylval = mkleaf_str(IDENTIFIER_N, yytext); return ID;}
+\'.\'		                    {yylval = mkleaf_str(CHARLITERAL_N, yytext); return CHARLITERAL;}
+0|[1-9][0-9]*	                {yylval = mkleaf_str(INTLITERAL_N, yytext); return DECLITERAL;}
+0[Xx][0-9A-F]+		            {yylval = mkleaf_str(INTLITERAL_N, yytext); return HEXLITERAL;}
+[0-9]+\.[0-9]*	                {yylval = mkleaf_str(REALLITERAL_N, yytext); return REALLITERAL;} 
+[0-9]+\.[0-9]*[\-\+][Ee][0-9]+	{yylval = mkleaf_str(REALLITERAL_N, yytext); return REALLITERAL;} 
+\".*\"		                    {yylval = mkleaf_str(STRINGLITERAL_N, yytext); return STRINGLITERAL;}
 [ \t]+                          ;
 \/%.*%\/                        ;    
 \n                              {lineno++;}

@@ -1,0 +1,25 @@
+func fib_rec(n: int) return int
+{
+    if (n == 0 || n == 1)
+        return n;
+    
+    return fib_rec(n - 1) + fib_rec(n - 2);
+}
+
+func fib_iter(n: int) return int
+{
+    var a : int;
+    var b : int;
+    var c : int;
+    a = 0;
+    b = 1;
+    i = 0;
+
+    while (i < n)
+    {
+        a = b;
+        b = a + b;
+        i = i + 1;
+    }
+    return a;
+}

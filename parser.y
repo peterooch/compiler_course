@@ -1,19 +1,6 @@
 %{
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdarg.h>
-
-typedef struct node
-{
-    char* token;
-    int nchildren;
-    struct node** children;
-} node;
-struct node* mkleaf(const char* token);
-struct node* mknode(const char* token, int count, ...);
-void printtree(struct node* tree, int spacing);
-#define YYSTYPE struct node*
+#include "common.h"
+#define YYSTYPE node*
 %}
 /* Keywords Lexemes */
 %token BOOL
@@ -79,54 +66,54 @@ S:
               PROG                                  {printtree($1, 0);}
             ;
 PROG:         
-              PROG FUNCDECL                         {$$ = mknode("code ", 2, $1, $2);}
-            | FUNCDECL
+              PROG FUNCDECL                         {$$ = mknode(CODE_N, 2, $1, $2);}
+            | FUNCDECL                              {$$ = mknode(CODE_N, 1, $1);}
             ;
 FUNCDECL:    
               PROCEXPR
             | FUNCEXPR
             ;
 PROCEXPR:    
-              PROC ID '(' PARAMLIST ')' '{' BLOCK '}'  {$$ = mknode("proc", 3, $2, $4, $7);}
+              PROC ID '(' PARAMLIST ')' '{' BLOCK '}'  {$$ = mknode(PROC_N, 3, $2, $4, $7);}
             ;
 FUNCEXPR:   
-              FUNC ID '(' PARAMLIST ')' RETURN TYPE  '{' BLOCK '}'  {$$ = mknode("func", 4, $2, $7, $4, $9);}
+              FUNC ID '(' PARAMLIST ')' RETURN TYPE  '{' BLOCK '}'  {$$ = mknode(FUNC_N, 4, $2, $7, $4, $9);}
             ;
 PARAMLIST:   
-              VARLIST ';' PARAMLIST                 {$$ = mknode("paramlist ", 2, $1, $3);}
-            | VARLIST                               {$$ = mknode("paramlist ", 1, $1);}
-            | /*EMPTY*/                             {$$ = mkleaf("paramlist none");}
+              VARLIST ';' PARAMLIST                 {$$ = mknode(PARAMLIST_N, 2, $1, $3);}
+            | VARLIST                               {$$ = mknode(PARAMLIST_N, 1, $1);}
+            | /*EMPTY*/                             {$$ = mkleaf(EMPTY_PARAMLIST);}
             ;         
 BLOCK:      
-              DECLARATION INNERBLOCK                {$$ = mknode("block ", 2, $1, $2);}
+              DECLARATION INNERBLOCK                {$$ = mknode(BLOCK_N, 2, $1, $2);}
             ;
 INNERBLOCK: 
-              INNERBLOCK STATEMENT                  {$$ = mknode("innerblock ", 2, $1, $2);}
-            | INNERBLOCK '{' BLOCK '}'              {$$ = mknode("innerblock ", 2, $1, $3);} 
+              INNERBLOCK STATEMENT                  {$$ = mknode(INNERBLOCK_N, 2, $1, $2);}
+            | INNERBLOCK '{' BLOCK '}'              {$$ = mknode(INNERBLOCK_N, 2, $1, $3);} 
             | /*EMPTY*/                             {$$ = NULL;}
             ;
 DECLARATION: 
-              DECLARATION VARDECL                   {$$ = mknode("declarations ", 2, $1, $2);}
-            | DECLARATION FUNCDECL                  {$$ = mknode("declarations ", 2, $1, $2);}
+              DECLARATION VARDECL                   {$$ = mknode(DECLARATIONS_N, 2, $1, $2);}
+            | DECLARATION FUNCDECL                  {$$ = mknode(DECLARATIONS_N, 2, $1, $2);}
             | /*EMPTY*/                             {$$ = NULL;}
             ;
 STATEMENT:   
-              ASSIGNMENT ';'     
+              ASSIGNMENT     
             | FUNCCALL ';'
             | IFELSE
-            | RETURNST ';'
+            | RETURNST
             | WHILEEXPR
             ;
 RETURNST:   
-              RETURN EXPR                        {$$ = mknode("return", 1, $2);}
+              RETURN EXPR ';'                        {$$ = mknode(RETURN_N, 1, $2);}
             ;
 ASSIGNMENT:   
-              ID ASS EXPR                        {$$ = mknode("=", 2, $1, $3);}
-            | ID '[' EXPR ']' ASS EXPR           {$$ = mknode("[]=", 3, $1, $3, $6);}
-            | DEREF EXPR ASS EXPR                {$$ = mknode("^=", 2, $2, $4);}
+              ID ASS EXPR ';'                        {$$ = mknode(ASSIGNMENT_N, 2, $1, $3);}
+            | ID '[' EXPR ']' ASS EXPR ';'           {$$ = mknode(ASSIGNMENT_BYINDEX_N, 3, $1, $3, $6);}
+            | DEREF EXPR ASS EXPR ';'                {$$ = mknode(ASSIGNMENT_DEREF_N, 2, $2, $4);}
             ;
 EXPR:       
-             '(' EXPR ')'                           {$$ = $2;}    
+             '(' EXPR ')'                            {$$ = $2;}    
             | LITERAL 
             | ID
             | FUNCCALL
@@ -136,56 +123,56 @@ EXPR:
             | BOOLEXPR
             ;
 VARDECL:    
-              VAR VARLIST ';'                       {$$ = mknode("var", 1, $2);}
+              VAR VARLIST ';'                       {$$ = mknode(VAR_N, 1, $2);}
             ;
 VARLIST:    
-              ID ',' VARLIST                        {$$ = mknode("varlist ", 2, $1, $3);}
-            | ID ':' STRING '[' DECLITERAL ']'      {$$ = mknode("varlist ", 2, $1, mknode("string", 1, $5));}
-            | ID ':' TYPE                           {$$ = mknode("varlist ", 2, $1, $3);} 
+              ID ',' VARLIST                        {$$ = mknode(VARLIST_N, 2, $1, $3);}
+            | ID ':' STRING '[' DECLITERAL ']'      {$$ = mknode(VARLIST_N, 3, $1, $3, $5);}
+            | ID ':' TYPE                           {$$ = mknode(VARLIST_N, 2, $1, $3);} 
             ;
 IFELSE:     
-              IF '(' EXPR ')' '{' BLOCK '}' ELSE '{' BLOCK '}'   {$$ = mknode("ifelse", 3, $3 ,$6, $10);}
-            | IF '(' EXPR ')' STATEMENT ELSE STATEMENT           {$$ = mknode("ifelse", 3, $3, $5, $7);}
-            | IF '(' EXPR ')' '{' BLOCK '}'                      {$$ = mknode("if", 2, $3, $6);}
-            | IF '(' EXPR ')' STATEMENT                          {$$ = mknode("if", 2, $3, $5);}
+              IF '(' EXPR ')' '{' BLOCK '}' ELSE '{' BLOCK '}'   {$$ = mknode(IFELSE_N, 3, $3 ,$6, $10);}
+            | IF '(' EXPR ')' STATEMENT ELSE STATEMENT           {$$ = mknode(IFELSE_N, 3, $3, $5, $7);}
+            | IF '(' EXPR ')' '{' BLOCK '}'                      {$$ = mknode(IF_N, 2, $3, $6);}
+            | IF '(' EXPR ')' STATEMENT                          {$$ = mknode(IF_N, 2, $3, $5);}
             ;
 WHILEEXPR:  
-              WHILE '(' EXPR ')' STATEMENT          {$$ = mknode("while", 2, $3, $5);}
-            | WHILE '(' EXPR ')' '{' BLOCK '}'      {$$ = mknode("while", 2, $3, $6);}
+              WHILE '(' EXPR ')' STATEMENT          {$$ = mknode(WHILE_N, 2, $3, $5);}
+            | WHILE '(' EXPR ')' '{' BLOCK '}'      {$$ = mknode(WHILE_N, 2, $3, $6);}
             ;
 FUNCCALL:   
-              ID '(' ARGS ')'                       {$$ = mknode("call", 2, $1, $3);}
+              ID '(' ARGS ')'                       {$$ = mknode(CALL_N, 2, $1, $3);}
             ;
 ARGS:       
-              EXPR ',' ARGS                         {$$ = mknode("args ", 2, $1, $3);}                            
-            | EXPR                                  {$$ = mknode("args ", 1, $1);} 
-            | /*EMPTY*/                             {$$ = mkleaf("args none");}
+              EXPR ',' ARGS                         {$$ = mknode(ARGS_N, 2, $1, $3);}                            
+            | EXPR                                  {$$ = mknode(ARGS_N, 1, $1);} 
+            | /*EMPTY*/                             {$$ = mkleaf(EMPTY_ARGS_N);}
             ;
 POINTEREXPR:
-              DEREF '(' EXPR ')'                    {$$ = mknode("^", 1, $3);}
-            | DEREF ID                              {$$ = mknode("^", 1, $2);}
-            | ADDRESSOF ID '[' EXPR ']'             {$$ = mknode("&", 2, $2, $4);}
-            | ADDRESSOF ID                          {$$ = mknode("&", 1, $2);}
+              DEREF '(' EXPR ')'                    {$$ = mknode(DEREF_N, 1, $3);}
+            | DEREF ID                              {$$ = mknode(DEREF_N, 1, $2);}
+            | ADDRESSOF ID '[' EXPR ']'             {$$ = mknode(ADDRESS_N, 2, $2, $4);}
+            | ADDRESSOF ID                          {$$ = mknode(ADDRESS_N, 1, $2);}
             ;
 UNARYEXP:   
-              UNARYOPS EXPR                         {$$ = mknode($1->token, 1, $2);}
-            | '|' EXPR '|'                          {$$ = mknode("|s|", 1, $2);}
+              UNARYOPS EXPR                         {$$ = mknode(UNARYEXPR_N, 2, $1, $2);}
+            | '|' EXPR '|'                          {$$ = mknode(STRLEN_N, 1, $2);}
             ;
 ARITHEXPR:    
-              EXPR DIV EXPR                         {$$ = mknode($2->token, 2, $1, $3);}
-            | EXPR MINUS EXPR                       {$$ = mknode($2->token, 2, $1, $3);}
-            | EXPR PLUS EXPR                        {$$ = mknode($2->token, 2, $1, $3);}
-            | EXPR MUL EXPR                         {$$ = mknode($2->token, 2, $1, $3);}
+              EXPR DIV EXPR                         {$$ = mknode(ARITH_N, 2, $1, $3);}
+            | EXPR MINUS EXPR                       {$$ = mknode(ARITH_N, 2, $1, $3);}
+            | EXPR PLUS EXPR                        {$$ = mknode(ARITH_N, 2, $1, $3);}
+            | EXPR MUL EXPR                         {$$ = mknode(ARITH_N, 2, $1, $3);}
             ;
 BOOLEXPR:  
-              EXPR AND EXPR                         {$$ = mknode($2->token, 2, $1, $3);}
-            | EXPR OR EXPR                          {$$ = mknode($2->token, 2, $1, $3);}
-            | EXPR EQ EXPR                          {$$ = mknode($2->token, 2, $1, $3);}
-            | EXPR NE EXPR                          {$$ = mknode($2->token, 2, $1, $3);}
-            | EXPR GT EXPR                          {$$ = mknode($2->token, 2, $1, $3);}
-            | EXPR GE EXPR                          {$$ = mknode($2->token, 2, $1, $3);};
-            | EXPR LT EXPR                          {$$ = mknode($2->token, 2, $1, $3);};
-            | EXPR LE EXPR                          {$$ = mknode($2->token, 2, $1, $3);};
+              EXPR AND EXPR                         {$$ = mknode(LOGICAL_N, 2, $1, $3);}
+            | EXPR OR EXPR                          {$$ = mknode(LOGICAL_N, 2, $1, $3);}
+            | EXPR EQ EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);}
+            | EXPR NE EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);}
+            | EXPR GT EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);}
+            | EXPR GE EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);};
+            | EXPR LT EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);};
+            | EXPR LE EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);};
             ;
 UNARYOPS:    
               PLUS
@@ -231,30 +218,35 @@ int yyerror()
     return 0; 
 }
 
-struct node* mkleaf(const char* token)
+node* mkleaf_str(NodeType nodetype, const str data)
 {
-    return mknode(token, 0);
+    node* temp = mknode(nodetype, 0);
+    temp->data = strdup(data);
+    return temp;
 }
 
-struct node* mknode(const char* token, int count, ...)
+node* mkleaf(NodeType nodetype)
+{
+    return mknode(nodetype, 0);
+}
+node* mknode(NodeType nodetype, int count, ...)
 {
     va_list args;
-    struct node* newnode;
-    struct node** children;
-    int i, j, toklen, copied;
+    node* newnode;
+    node** children;
+    int i, j, copied;
 
-    newnode = (struct node*)malloc(sizeof(struct node));
-    children = (struct node**)malloc(sizeof(struct node*) * count);
-    newnode->token = strdup(token);
+    newnode = (node*)malloc(sizeof(node));
+    children = (node**)malloc(sizeof(node*) * count);
+    newnode->nodetype = nodetype;
     newnode->nchildren = count;
-
-    toklen = strlen(token);
+    newnode->data = NULL;
 
     va_start(args, count);
     for (i = 0; i < count; i++)
     {
-        children[i] = va_arg(args, struct node*);
-        if (children[i] != NULL && toklen > 2 && strcmp(children[i]->token, token) == 0)
+        children[i] = va_arg(args, node*);
+        if (children[i] != NULL && nodetype < EXPR_N && children[i]->nodetype == nodetype)
             newnode->nchildren += children[i]->nchildren;
     }
     va_end(args);
@@ -265,11 +257,11 @@ struct node* mknode(const char* token, int count, ...)
         return newnode;
     }
 
-    newnode->children = (struct node**)malloc(sizeof(struct node*) * newnode->nchildren);
+    newnode->children = (node**)malloc(sizeof(node*) * newnode->nchildren);
 
     for (i = 0, copied = 0; i < count; i++)
     {
-        if (children[i] != NULL && strcmp(children[i]->token, token) == 0)
+        if (children[i] != NULL && children[i]->nodetype == nodetype)
         {
             for (j = 0; j < children[i]->nchildren; j++)
                 newnode->children[copied++] = children[i]->children[j];
@@ -284,7 +276,7 @@ struct node* mknode(const char* token, int count, ...)
     return newnode;
 }
 
-void printtree(struct node* tree, int spacing)
+void printtree(node* tree, int spacing)
 {
     int i, done = 0;
 
@@ -298,7 +290,7 @@ void printtree(struct node* tree, int spacing)
             printf("  ");
     }
 
-    printf(" (%s", tree->token);
+    printf(" (%d", tree->nodetype);
 
     for (i = 0; i < tree->nchildren; i++)
         printtree(tree->children[i], spacing + 1);
