@@ -10,7 +10,7 @@ func fib_iter(n: int) return int
 {
     var a : int;
     var b : int;
-    var c : int;
+    var i : int;
     a = 0;
     b = 1;
     i = 0;
@@ -22,4 +22,9 @@ func fib_iter(n: int) return int
         i = i + 1;
     }
     return a;
+}
+
+proc Main()
+{
+
 }

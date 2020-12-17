@@ -63,7 +63,7 @@
 
 %%
 S:          
-              PROG                                  {printtree($1, 0);}
+              PROG                                  {analyzer($1);}
             ;
 PROG:         
               PROG FUNCDECL                         {$$ = mknode(CODE_N, 2, $1, $2);}
@@ -146,7 +146,7 @@ FUNCCALL:
 ARGS:       
               EXPR ',' ARGS                         {$$ = mknode(ARGS_N, 2, $1, $3);}                            
             | EXPR                                  {$$ = mknode(ARGS_N, 1, $1);} 
-            | /*EMPTY*/                             {$$ = mkleaf(EMPTY_ARGS_N);}
+            | /*EMPTY*/                             {$$ = mkleaf(ARGS_N);}
             ;
 POINTEREXPR:
               DEREF '(' EXPR ')'                    {$$ = mknode(DEREF_N, 1, $3);}
@@ -169,15 +169,15 @@ BOOLEXPR:
             | EXPR OR EXPR                          {$$ = mknode(LOGICAL_N, 2, $1, $3);}
             | EXPR EQ EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);}
             | EXPR NE EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);}
-            | EXPR GT EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);}
-            | EXPR GE EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);};
-            | EXPR LT EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);};
-            | EXPR LE EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);};
+            | EXPR GT EXPR                          {$$ = mknode(ARITHCOMP_N, 2, $1, $3);}
+            | EXPR GE EXPR                          {$$ = mknode(ARITHCOMP_N, 2, $1, $3);};
+            | EXPR LT EXPR                          {$$ = mknode(ARITHCOMP_N, 2, $1, $3);};
+            | EXPR LE EXPR                          {$$ = mknode(ARITHCOMP_N, 2, $1, $3);};
             ;
 UNARYOPS:    
-              PLUS
-            | MINUS
-            | NOT
+              PLUS EXPR                             {$$ = mknode(UNARYEXPR_N, 1, $2);}
+            | MINUS EXPR                            {$$ = mknode(UNARYEXPR_N, 1, $2);}
+            | NOT EXPR                              {$$ = mknode(NOT_N, 1, $2);}
             ;        
 TYPE:       
               SCALARTYPE
@@ -218,6 +218,7 @@ int yyerror()
     return 0; 
 }
 
+/* AST Tree building code */
 node* mkleaf_str(NodeType nodetype, const str data)
 {
     node* temp = mknode(nodetype, 0);
@@ -229,6 +230,7 @@ node* mkleaf(NodeType nodetype)
 {
     return mknode(nodetype, 0);
 }
+
 node* mknode(NodeType nodetype, int count, ...)
 {
     va_list args;
@@ -241,6 +243,7 @@ node* mknode(NodeType nodetype, int count, ...)
     newnode->nodetype = nodetype;
     newnode->nchildren = count;
     newnode->data = NULL;
+    newnode->line = lineno; /* For debugging purposes */
 
     va_start(args, count);
     for (i = 0; i < count; i++)
@@ -276,6 +279,7 @@ node* mknode(NodeType nodetype, int count, ...)
     return newnode;
 }
 
+/* Part 1 Code, not being used */
 void printtree(node* tree, int spacing)
 {
     int i, done = 0;

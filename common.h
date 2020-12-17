@@ -5,54 +5,44 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
-static char msg[512];
-
-#define POST_MSG(func, fmt, ...) \
-		sprintf(msg, fmt, __VA_ARGS__); \
-		func(msg)
-#define ERR_MSG(fmt, ...) \
-		POST_MSG(error, fmt, __VA_ARGS__)
-#define DBG_MSG(fmt, ...) \
-		POST_MSG(printf, fmt, __VA_ARGS__)
+#include <assert.h>
 
 typedef enum _NodeType 
 {
-    CODE_N,
-    PROC_N, FUNC_N,
-    PARAMLIST_N, EMPTY_PARAMLIST,
-    BLOCK_N, DECLARATIONS_N, INNERBLOCK_N,
-    RETURN_N,
-    ASSIGNMENT_N,
-    ASSIGNMENT_BYINDEX_N,
-    ASSIGNMENT_DEREF_N,
-    VAR_N, VARLIST_N,
-    IF_N, IFELSE_N,
-    WHILE_N,
-    CALL_N, /* FIXME This can be an expression and not one */
-	ARGS_N, EMPTY_ARGS_N,
-    tVOID_N, tINT_N, tCHAR_N, tREAL_N, tBOOL_N, tSTRING_N,
-    tINTPTR_N, tCHARPTR_N, tREALPTR_N,
-    ASS_N,
-    EXPR_N,
-    LOGICAL_N,
-    COMP_N,
-    ARITH_N,
-    NOT_N,
-    ADDRESS_N,
-    DEREF_N,
-    STRLEN_N,
-    IDENTIFIER_N,
-    NULLPTR_N,
-    BOOLLITERAL_N,
-    CHARLITERAL_N,
-    INTLITERAL_N,
-    REALLITERAL_N,
-    STRINGLITERAL_N,
-    BOOLEXPR_N,
-    ARITHEXPR_N,
-    UNARYEXPR_N,
-    POINTEREXPR_N,
+    CODE_N, // DONE
+    PROC_N, FUNC_N, // DONE
+    PARAMLIST_N, EMPTY_PARAMLIST, // DONE
+    BLOCK_N, DECLARATIONS_N, INNERBLOCK_N, // DONE
+    RETURN_N, // DONE
+    ASSIGNMENT_N, // DONE
+    ASSIGNMENT_BYINDEX_N, // DONE
+    ASSIGNMENT_DEREF_N, // DONE
+    VAR_N, VARLIST_N, // DONE
+    IF_N, IFELSE_N, // DONE
+    WHILE_N, // DONE
+    CALL_N, // DONE
+    ARGS_N, // DONE
+    tVOID_N, tINT_N, tCHAR_N, tREAL_N, tBOOL_N, tSTRING_N, //DONE
+    tINTPTR_N, tCHARPTR_N, tREALPTR_N, // DONE
+    ASS_N, // DONE
+    EXPR_N, // Everything bigger than this is an expression, NOT TO BE USED directly
+    LOGICAL_N, // DONE
+    COMP_N, // DONE
+    ARITHCOMP_N, // DONE
+    ARITH_N, // DONE
+    NOT_N, // DONE
+    ADDRESS_N, // DONE
+    DEREF_N, // DONE
+    STRLEN_N, // DONE
+    IDENTIFIER_N, // DONE
+    ARITHEXPR_N, // DONE
+    UNARYEXPR_N, // DONE
+    NULLPTR_N, // DONE
+    BOOLLITERAL_N, // DONE
+    CHARLITERAL_N, // DONE
+    INTLITERAL_N, // DONE
+    REALLITERAL_N, // DONE
+    STRINGLITERAL_N, // DONE
 } NodeType;
 
 typedef char* str;
@@ -61,6 +51,7 @@ typedef struct _node
     NodeType nodetype;
     int nchildren;
     str data;
+    int line;
     struct _node** children;
 } node;
 
@@ -70,15 +61,14 @@ node* mknode(NodeType n, int count, ...);
 void printtree(node* tree, int spacing);
 
 #define PBIT 0x10
-#define FBIT 0x100
 typedef enum _Type
 {
-    tINT = 0x1,
+    tVOID, /* PROCs */
+    tINT,
     tCHAR,
     tREAL,
     tBOOL,
     tSTRING,
-    tVOID, /* PROCs */
     tNULLPTR = PBIT,
     tINTPTR,
     tCHARPTR,
@@ -86,26 +76,20 @@ typedef enum _Type
 } Type;
 
 /* Utility macros */
-#define ISPTR(x)    (x & PBIT)
-#define TOPTR(x)    (x | PBIT)
-#define TOSCALAR(x) (x & ~PBIT)
-#define TOFMASK(x)  (x | FBIT)
-#define ISFMASK(x)  (x & FBIT)
-#define NOFMASK(x)  (x & ~FBIT)
+#define ISPTRTYPE(x) (x >= tINT && x <= tREAL)
+#define ISPTR(x)     (x & PBIT)
+#define TOPTR(x)     (x | PBIT)
+#define TOSCALAR(x)  (x & ~PBIT)
 
-typedef struct _param_list
-{
-    int count;
-    Type type;
-    struct _param_list* next;
-} param_list;
-
+#define CALLABLE_FLAG (1 << 0)
 typedef struct _table_entry
 {
     str identifier;
     /* Put here additional entry info members */
     Type type;
-    param_list* parmeters;
+    int flags; // Is identifier function/procedure
+    Type* parmeters;
+    int nparameters;
     /* Tree data */
     struct _table_entry* left;
     struct _table_entry* right;
@@ -114,10 +98,14 @@ typedef struct _table_entry
 
 typedef struct _scopestack
 {
-    table_entry** symbol_table;
+    table_entry* symbol_table;
+    Type return_type;
     struct _scopestack* next;
 } scopestack, *scopestack_ptr;
 
+Type verify_call(node* call_expr);
+Type evaltype(node* expr);
+void analyzer(node* n);
 void process_node(node* n);
 
 #define CALLABLE_ID 0
