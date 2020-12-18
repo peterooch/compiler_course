@@ -469,6 +469,8 @@ void process_node(node* n)
             process_node(n->children[IS_FUNC(n) ? FUNC_BLOCK : PROC_BLOCK]);
             /* Pop callable scope, Should be popped by ^ BLOCK_N clause */
 
+            if (!IS_FUNC(n))
+                break;
             /* Logic behind checking if a FUNC has the required return statement at the end
              *          { BLOCK }              <- Function scope block            
              *              |
@@ -478,6 +480,14 @@ void process_node(node* n)
              *                          |
              *                        RETURN   <- Should be a RETURN_N node, typecheck should be already done
              */
+            node* block = n->children[FUNC_BLOCK];
+            if (block->children[1] == NULL)
+                simple_error("funcrion must have return statment in it's end.");
+            if (block->children[1]->nchildren == 0)
+                simple_error("funcrion must have return statment in it's end.");
+            block = block->children[1];
+            if (block->children[block->nchildren - 1]->nodetype != RETURN_N)
+                simple_error("funcrion must have return statment in it's end.");
             break;
         }
         case RETURN_N:
