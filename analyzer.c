@@ -233,8 +233,11 @@ Type verify_call(node* call_expr)
     callable_params = callable->parmeters;
     call_args = call_expr->children[1];
 
-    if (callable->nparameters != call_args->nchildren)
-        error("Line %d: Call to %s: Too many/Too few arguments.", call_expr->line, identifier);
+    if (call_args->nchildren != callable->nparameters)
+    {
+        error("Line %d: Call to %s: %s arguments.",
+              call_expr->line, identifier, (call_args->nchildren > callable->nparameters) ? "Too much": "Not enough");
+    }
 
     for (int i = 0; i < callable->nparameters; i++)
     {
@@ -373,6 +376,15 @@ Type evaltype(node* expr)
                 error("Line %d: Pointer error...", expr->line);
             return TOSCALAR(t);
         }
+        case ARRAY_ACCESS_N:
+        {
+            if (evaltype(expr->children[0]) != tSTRING)
+                error("Line %d: operator [] can be only used on strings.", expr->line);
+            if (evaltype(expr->children[1]) != tINT)
+                error("Line %d: operator [] can only receive a int as index position.", expr->line);
+            
+            return tCHAR;
+        }
     }
     /* UNREACHABLE */
     assert(!ntype);
@@ -402,6 +414,7 @@ void analyzer(node* n)
     printf("AST processing finished without issues.\n");
 }
 
+#define LAST(n) n->children[n->nchildren-1]
 /* Central AST processor, in preorder processes statements and declerations */
 void process_node(node* n)
 {
@@ -423,11 +436,14 @@ void process_node(node* n)
         case FUNC_N:
         case PROC_N:
         {
+            int fline = n->children[CALLABLE_ID]->line;
             /* Add identifier to current scope */
             if (add_symbol(n->children[CALLABLE_ID], IS_FUNC(n) ? n->children[FUNC_TYPE]->nodetype : tVOID_N) == 0)
-                error("Line %d: Identifier %s exists already in current scope", n->line, n->children[CALLABLE_ID]->data);
+                error("Line %d: Identifier %s exists already in current scope", fline, n->children[CALLABLE_ID]->data);
             /* Get symbol table entry to put additional data/"decoration" on the identifier*/
             entry = find_symbol(n->children[CALLABLE_ID]->data);
+            if (entry->type == tSTRING)
+                error("Line %d: Functions can not return strings.", fline);
             /* Mark identifier as a callable */
             entry->flags |= CALLABLE_FLAG;
 
@@ -437,13 +453,13 @@ void process_node(node* n)
             if (strcmp(entry->identifier, "Main") == 0)
             {   
                 if (main_defined)
-                    error("Line %d: Main() is already defined", n->line);
+                    error("Line %d: Main() is already defined", fline);
                 if (plist->nodetype != EMPTY_PARAMLIST)
-                    error("Line %d: Main() should not have parameters", n->line);
+                    error("Line %d: Main() should not have parameters", fline);
                 if (n->nodetype != PROC_N)
-                    error("Line %d: Main() should be a procedure", n->line);
+                    error("Line %d: Main() should be a procedure", fline);
                 if (stack->next != NULL)
-                    error("Line %d: Main() should be in global scope.", n->line);
+                    error("Line %d: Main() should be in global scope.", fline);
                 main_defined = 1;
             }
             
@@ -453,7 +469,7 @@ void process_node(node* n)
                 vl = plist->children[i];
                 entry->nparameters += vl->nchildren - 1;
                 entry->parmeters = realloc(entry->parmeters, entry->nparameters * sizeof(Type));
-                type = nodetypetotype(vl->children[vl->nchildren - 1]->nodetype);
+                type = nodetypetotype(LAST(vl)->nodetype);
                 for (j = 0; j < vl->nchildren - 1; j++)
                     entry->parmeters[done++] = type;
             }
@@ -482,21 +498,21 @@ void process_node(node* n)
              */
             node* block = n->children[FUNC_BLOCK];
             if (block->children[1] == NULL)
-                simple_error("funcrion must have return statment in it's end.");
+                error("Line %d: Function must have a return statement defined at the end", fline);
             if (block->children[1]->nchildren == 0)
-                simple_error("funcrion must have return statment in it's end.");
+                error("Line %d: Function must have a return statement defined at the end", fline);
             block = block->children[1];
-            if (block->children[block->nchildren - 1]->nodetype != RETURN_N)
-                simple_error("funcrion must have return statment in it's end.");
+            if (LAST(block)->nodetype != RETURN_N)
+                error("Line %d: Function must have a return statement defined at the end", fline);
             break;
         }
         case RETURN_N:
         {
             if (stack->return_type == tVOID)
-                simple_error("Cannot return in a procedure");
+                error("Line %d: Cannot return in a procedure", n->line);
 
             if (evaltype(n->children[0]) != stack->return_type)
-                simple_error("Return value type does not match function return type");
+                error("Line %d: Return value type does not match function return type", n->line);
             
             break;
         }
@@ -524,11 +540,16 @@ void process_node(node* n)
         }
         case VARLIST_N:
         {
-            NodeType nodetype = n->children[n->nchildren - 1]->nodetype;
-            for (i = 0; i < n->nchildren - 1; i++)
+            int nchildren = n->nchildren;
+            NodeType nodetype = LAST(n)->nodetype;
+
+            if (nodetype == tSTRING_N)
+                nchildren--;
+
+            for (i = 0; i < nchildren - 1; i++)
             {
                 if (add_symbol(n->children[i], nodetype) == 0)
-                    simple_error("ID exists already in scope");
+                    error("Line %d: Identifier %s exists already in current scope", n->children[i]->line, n->children[i]->data);
             }
             break;
         }
@@ -539,7 +560,7 @@ void process_node(node* n)
             type = evaltype(n->children[0]);
 
             if (type != tBOOL)
-                simple_error("Conditional expression given is not boolean");
+                error("Line %d: Conditional expression must be boolean", n->children[0]->line);
 
             process_node(n->children[1]);
 
@@ -561,7 +582,7 @@ void process_node(node* n)
             type = evaltype(n->children[1]);
 
             if (!(type == id->type || (ISPTR(id->type) && type == tNULLPTR)))
-                simple_error("type mismatch");
+                error("Line %d: Type mismatch in assignment", n->line);
 
             break;
         }
@@ -570,15 +591,15 @@ void process_node(node* n)
             table_entry* id = find_symbol(n->children[0]->data);
 
             if (id == NULL)
-                error("Line %d: identifier %s not exsit", n->line, n->children[0]->data);
+                error("Line %d: Identifier %s does not exists", n->line, n->children[0]->data);
             if (id->flags & CALLABLE_FLAG)
-                simple_error("Identifier is a procedure/function");
+                error("Line %d: Identifier %s is a procedure/function", n->line, n->children[0]->data);
             if (id->type != tSTRING)
-                simple_error("identifier must be a String.");
+                error("Line %d: Identifier %s is not a string", n->line, n->children[0]->data);
             if (evaltype(n->children[1]) != tINT)
-                simple_error("index must be a Int.");
+                error("Line %d: Index value must be an int", n->line);
             if (evaltype(n->children[2]) != tCHAR)
-                simple_error("value must be a char");
+                error("Line %d: Assignment value must be an char", n->line);
             break;
         }
         case ASSIGNMENT_DEREF_N:

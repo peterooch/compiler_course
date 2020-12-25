@@ -121,13 +121,14 @@ EXPR:
             | POINTEREXPR
             | ARITHEXPR
             | BOOLEXPR
+            | ID '[' EXPR ']'                       {$$ = mknode(ARRAY_ACCESS_N, 2, $1, $3);}
             ;
 VARDECL:    
               VAR VARLIST ';'                       {$$ = mknode(VAR_N, 1, $2);}
             ;
 VARLIST:    
               ID ',' VARLIST                        {$$ = mknode(VARLIST_N, 2, $1, $3);}
-            | ID ':' STRING '[' DECLITERAL ']'      {$$ = mknode(VARLIST_N, 3, $1, $3, $5);}
+            | ID ':' STRING '[' DECLITERAL ']'      {$$ = mknode(VARLIST_N, 3, $1, $5, $3);}
             | ID ':' TYPE                           {$$ = mknode(VARLIST_N, 2, $1, $3);} 
             ;
 IFELSE:     
@@ -155,7 +156,7 @@ POINTEREXPR:
             | ADDRESSOF ID                          {$$ = mknode(ADDRESS_N, 1, $2);}
             ;
 UNARYEXP:   
-              UNARYOPS EXPR                         {$$ = mknode(UNARYEXPR_N, 2, $1, $2);}
+              UNARYOPS
             | '|' EXPR '|'                          {$$ = mknode(STRLEN_N, 1, $2);}
             ;
 ARITHEXPR:    
@@ -264,7 +265,10 @@ node* mknode(NodeType nodetype, int count, ...)
 
     for (i = 0, copied = 0; i < count; i++)
     {
-        if (children[i] != NULL && children[i]->nodetype == nodetype)
+        if (children[i] == NULL)
+            continue;
+
+        if (children[i]->nodetype == nodetype)
         {
             for (j = 0; j < children[i]->nchildren; j++)
                 newnode->children[copied++] = children[i]->children[j];
@@ -274,6 +278,7 @@ node* mknode(NodeType nodetype, int count, ...)
             newnode->children[copied++] = children[i];
         }
     }
+    newnode->nchildren = copied;
 
     free(children);
     return newnode;

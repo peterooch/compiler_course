@@ -43,6 +43,7 @@ typedef enum _NodeType
     INTLITERAL_N, // DONE
     REALLITERAL_N, // DONE
     STRINGLITERAL_N, // DONE
+    ARRAY_ACCESS_N
 } NodeType;
 
 typedef char* str;
