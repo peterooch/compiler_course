@@ -1,0 +1,4 @@
+proc Main(x: int)
+{
+    
+}

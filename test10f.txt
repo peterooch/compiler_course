@@ -1,0 +1,9 @@
+func one() return int
+{
+    return 1;
+}
+proc Main()
+{
+    var x: bool;
+    x = one();
+}

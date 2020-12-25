@@ -1,0 +1,4 @@
+proc Main()
+{
+    /% This is a dummy Main() procedure %/
+}

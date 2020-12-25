@@ -1,0 +1,9 @@
+proc Main()
+{
+    foo();
+}
+
+proc foo()
+{
+    foo();
+}

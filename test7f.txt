@@ -1,0 +1,9 @@
+
+proc foo(x,y,z:int)
+{
+
+}
+proc Main()
+{
+    foo(1,2,3,4);
+}

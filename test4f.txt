@@ -1,0 +1,7 @@
+proc Main()
+{
+    var x: int;
+    var x: bool;
+
+    x = x;
+}

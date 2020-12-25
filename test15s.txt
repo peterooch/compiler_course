@@ -1,0 +1,22 @@
+proc Main()
+{
+    var a : int*;
+    var b : bool;
+    var c : int;
+    var d : char;
+    var e : real;
+    var f : real*;
+
+    a = null;
+    b = !true;
+    c = 5;
+    c = -c;
+    c = +c;
+    a = &c;
+    d = 'd';
+    e = 3.14;
+    f = &e;
+    c = ^a;
+    e = ^f;
+    ^a = ^a;
+}

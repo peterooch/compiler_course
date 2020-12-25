@@ -1,0 +1,8 @@
+func foo() return int
+{
+    return true;
+}
+proc Main()
+{
+
+}

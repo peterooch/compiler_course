@@ -1,0 +1,8 @@
+proc foo()
+{
+    return true;
+}
+proc Main()
+{
+
+}

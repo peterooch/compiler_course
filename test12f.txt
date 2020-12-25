@@ -1,0 +1,7 @@
+proc Main()
+{
+    while (10)
+    {
+        /% something %/
+    }
+}

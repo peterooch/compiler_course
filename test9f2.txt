@@ -1,0 +1,8 @@
+func foo() return string
+{
+    return "Hello World";
+}
+proc Main()
+{
+
+}

@@ -1,0 +1,7 @@
+proc Main()
+{
+    if (10)
+    {
+        /% something %/
+    }
+}

@@ -1,0 +1,5 @@
+proc Main()
+{
+    var x: string[100];
+    x[5] = 'a';
+}
