@@ -1,0 +1,8 @@
+proc Main()
+{
+    var a : int*;
+    var b : real;
+
+    b = 1.01;
+    a = &b;
+}

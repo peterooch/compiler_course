@@ -1,0 +1,324 @@
+Input file: (test10f.txt)
+func one() return int
+{
+    return 1;
+}
+proc Main()
+{
+    var x: bool;
+    x = one();
+}
+Output Message: ERROR 1009: Line 8: Type mismatch in assignment
+
+Input file: (test11f.txt)
+proc Main()
+{
+    if (10)
+    {
+        /% something %/
+    }
+}
+Output Message: ERROR 987: Line 3: Conditional expression must be boolean
+
+Input file: (test12f.txt)
+proc Main()
+{
+    while (10)
+    {
+        /% something %/
+    }
+}
+Output Message: ERROR 987: Line 3: Conditional expression must be boolean
+
+Input file: (test13f1.txt)
+proc Main()
+{
+    var x: string[100];
+    x['a'] = 'a';
+}
+Output Message: ERROR 1024: Line 4: Index value must be an int
+
+Input file: (test13s.txt)
+proc Main()
+{
+    var x: string[100];
+    x[5] = 'a';
+}
+Output Message: AST processing finished without issues.
+
+Input file: (test14f.txt)
+proc Main()
+{
+    var x: int;
+    x[4] = 4;
+}
+Output Message: ERROR 1022: Line 4: Identifier x is not a string
+
+Input file: (test15f.txt)
+proc Main()
+{
+    var a : int*;
+    var b : real;
+
+    b = 1.01;
+    a = &b;
+}
+Output Message: ERROR 1009: Line 7: Type mismatch in assignment
+
+Input file: (test15s.txt)
+proc Main()
+{
+    var a : int*;
+    var b : bool;
+    var c : int;
+    var d : char;
+    var e : real;
+    var f : real*;
+
+    a = null;
+    b = !true;
+    c = 5;
+    c = -c;
+    c = +c;
+    a = &c;
+    d = 'd';
+    e = 3.14;
+    f = &e;
+    c = ^a;
+    e = ^f;
+    ^a = ^a;
+}
+Output Message: AST processing finished without issues.
+
+Input file: (test16f1.txt)
+proc Main()
+{
+    var b : bool;
+    b = 3 == 3.0;
+}
+Output Message: ERROR 733: Line 4: Mismatched types in comparison
+
+Input file: (test16f2.txt)
+proc Main()
+{
+    var b : bool;
+    b = 3 && 3.0;
+}
+Output Message: ERROR 726: Line 4: Logical operation requires 2 boolean operands
+
+Input file: (test16f3.txt)
+proc Main()
+{
+    var b : bool;
+    b = 3 + 'a';
+}
+Output Message: ERROR 747: Line 4: Arithmetic operation with non int/real operands
+
+Input file: (test16s.txt)
+proc Main()
+{
+    var b : bool;
+    var i : int;
+    var c : char;
+    var r : real;
+    var s : string[10];
+    var pi : int*;
+    var pc : char*;
+    var pr : real*;
+
+    /% +, -, *, / %/
+    i = 1 + 2;
+    r = i + 3.14;
+    i = 1 * 2;
+    r = i * 3.14;
+    i = 1 - 2;
+    r = i - 3.14;
+    r = i / 3.14;
+    /% &&, ||, ! %/
+    b = true && false;
+    b = b || !b;
+    /% >, <, >=, <= %/
+    b = 3 > 3;
+    b = 3.0 < 3;
+    b = 3.0 >= 3.0;
+    b = 3.0 < 3;
+    /% !=, == %/
+    b = true == false;
+    b = 'c' != s[0];
+    /% |s| %/
+    i = |s|;
+}
+Output Message: AST processing finished without issues.
+
+Input file: (test17f1.txt)
+proc Main()
+{
+    var a : int*;
+    var b : bool;
+
+    b = false;
+    a = &b;
+}
+Output Message: ERROR 785: Line 7: operator & must be used on int, char or real.
+
+Input file: (test1f.txt)
+proc Main()
+{
+    /% dummy %/
+    proc Main()
+    {
+        /% dummy %/
+    }
+}
+Output Message: ERROR 880: Line 4: Main() is already defined
+
+Input file: (test1f2.txt)
+proc foo()
+{
+    
+}
+Output Message: ERROR 833: Main() procedure was not defined.
+
+Input file: (test1s.txt)
+proc Main()
+{
+    /% This is a dummy Main() procedure %/
+}
+Output Message: AST processing finished without issues.
+
+Input file: (test2f.txt)
+proc Main(x: int)
+{
+    
+}
+Output Message: ERROR 882: Line 1: Main() should not have parameters
+
+Input file: (test3f.txt)
+proc foo(x: int)
+{
+
+}
+func foo(x: int) return int
+{
+    return x;
+}
+Output Message: ERROR 866: Line 5: Identifier foo exists already in current scope
+
+Input file: (test4f.txt)
+proc Main()
+{
+    var x: int;
+    var x: bool;
+
+    x = x;
+}
+Output Message: ERROR 976: Line 4: Identifier x exists already in current scope
+
+Input file: (test5f.txt)
+proc Main()
+{
+    foo();
+}
+
+proc foo()
+{
+    foo();
+}
+Output Message: ERROR 653: Line 3, Identifier foo does not exists.
+
+Input file: (test6f.txt)
+proc foo(x, y: int)
+{
+    z = x + y;
+}
+proc Main() {}
+Output Message: ERROR 1001: Line 3: Identifier z is not defined
+
+Input file: (test7f.txt)
+
+proc foo(x,y,z:int)
+{
+
+}
+proc Main()
+{
+    foo(1,2,3,4);
+}
+Output Message: ERROR 662: Line 8: Call to foo: Too much arguments.
+
+Input file: (test8f.txt)
+proc foo(x,y,z:int)
+{
+
+}
+proc Main()
+{
+    foo(1, true,'a');
+}
+Output Message: ERROR 669: Line 7: Call to foo, Argument no. 2: Type mismatch.
+
+Input file: (test9f1.txt)
+func foo() return int
+{
+    return true;
+}
+proc Main()
+{
+
+}
+Output Message: ERROR 939: Line 3: Return value type does not match function return type
+
+Input file: (test9f2.txt)
+func foo() return string
+{
+    return "Hello World";
+}
+proc Main()
+{
+
+}
+Output Message: ERROR 870: Line 1: Functions can not return strings.
+
+Input file: (test9f3.txt)
+proc foo()
+{
+    return true;
+}
+proc Main()
+{
+
+}
+Output Message: ERROR 936: Line 3: Cannot return in a procedure
+
+Input file: (testfib.txt)
+func fib_rec(n: int) return int
+{
+    if (n == 0 || n == 1)
+        return n;
+    
+    return fib_rec(n - 1) + fib_rec(n - 2);
+}
+func fib_iter(n: int) return int
+{
+    var a : int;
+    var b : int;
+    var i : int;
+    a = 0;
+    b = 1;
+    i = 0;
+
+    while (i < n)
+    {
+        a = b;
+        b = a + b;
+        i = i + 1;
+    }
+    return a;
+}
+
+proc Main()
+{
+
+}
+Output Message: AST processing finished without issues.
+

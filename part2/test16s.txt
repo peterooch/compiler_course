@@ -1,0 +1,33 @@
+proc Main()
+{
+    var b : bool;
+    var i : int;
+    var c : char;
+    var r : real;
+    var s : string[10];
+    var pi : int*;
+    var pc : char*;
+    var pr : real*;
+
+    /% +, -, *, / %/
+    i = 1 + 2;
+    r = i + 3.14;
+    i = 1 * 2;
+    r = i * 3.14;
+    i = 1 - 2;
+    r = i - 3.14;
+    r = i / 3.14;
+    /% &&, ||, ! %/
+    b = true && false;
+    b = b || !b;
+    /% >, <, >=, <= %/
+    b = 3 > 3;
+    b = 3.0 < 3;
+    b = 3.0 >= 3.0;
+    b = 3.0 < 3;
+    /% !=, == %/
+    b = true == false;
+    b = 'c' != s[0];
+    /% |s| %/
+    i = |s|;
+}

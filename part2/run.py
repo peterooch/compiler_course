@@ -3,7 +3,7 @@ import os
 
 os.system("lex scanner.l")
 os.system("yacc parser.y")
-os.system("gcc -g y.tab.c analyzer.c -o test -ll -Ly")
+os.system("gcc -g y.tab.c -o test -ll -Ly")
 
 output_file = open("doc.txt", "w")
 for fname in (os.path.basename(entry) for entry in os.scandir(os.getcwd())):
