@@ -150,7 +150,8 @@ ARGS:
             | /*EMPTY*/                             {$$ = mkleaf(ARGS_N);}
             ;
 POINTEREXPR:
-              DEREF '(' EXPR ')'                    {$$ = mknode(DEREF_N, 1, $3);}
+              DEREF '(' ID PLUS EXPR')'             {$$ = mknode(DEREF_N, 1, $3);}
+            | DEREF '(' ID MINUS EXPR')'            {$$ = mknode(DEREF_N, 1, $3);}
             | DEREF ID                              {$$ = mknode(DEREF_N, 1, $2);}
             | ADDRESSOF ID '[' EXPR ']'             {$$ = mknode(ADDRESS_N, 2, $2, $4);}
             | ADDRESSOF ID                          {$$ = mknode(ADDRESS_N, 1, $2);}

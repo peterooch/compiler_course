@@ -1,7 +1,9 @@
 %{
-    int lineno=1;
+    int lineno=0;
 %}
+%x comment
 %%
+
 if 		                        {return IF;}
 else 	                        {return ELSE;}
 while 	                        {return WHILE;}
@@ -47,7 +49,10 @@ false	                        {yylval = mkleaf_str(BOOLLITERAL_N, yytext); retur
 [0-9]+\.[0-9]*[\-\+][Ee][0-9]+	{yylval = mkleaf_str(REALLITERAL_N, yytext); return REALLITERAL;} 
 \".*\"		                    {yylval = mkleaf_str(STRINGLITERAL_N, yytext); return STRINGLITERAL;}
 [ \t]+                          ;
-\/%.*%\/                        ;    
+"/%" BEGIN                      comment; 
+<comment>[^\n]                  ;
+<comment>\n                     yylineno++;
+<comment>"%/" BEGIN             0;
 \n                              {lineno++;}
 .                               {return yytext[0];}
 %%
