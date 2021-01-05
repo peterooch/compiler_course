@@ -82,6 +82,7 @@ typedef enum _Type
 #define TOPTR(x)     (x | PBIT)
 #define TOSCALAR(x)  (x & ~PBIT)
 
+#define isnum(x) (x == tINT || x == tREAL)
 #define CALLABLE_FLAG (1 << 0)
 typedef struct _table_entry
 {

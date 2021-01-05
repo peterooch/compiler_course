@@ -508,10 +508,14 @@ void process_node(node* n)
         }
         case RETURN_N:
         {
+            Type rt, st;
+            st = stack->return_type;
+            rt = evaltype(n->children[0], f, &t);
             if (stack->return_type == tVOID)
                 error("Line %d: Cannot return in a procedure", n->line);
 
             if (evaltype(n->children[0]) != stack->return_type)
+            if (rt != st && !(isnum(rt) && isnum(st)))
                 error("Line %d: Return value type does not match function return type", n->line);
             
             break;
@@ -582,6 +586,7 @@ void process_node(node* n)
             type = evaltype(n->children[1]);
 
             if (!(type == id->type || (ISPTR(id->type) && type == tNULLPTR)))
+            if (!((isnum(type) && isnum(id->type)) || type == id->type || (ISPTR(id->type) && type == tNULLPTR)))
                 error("Line %d: Type mismatch in assignment", n->line);
 
             break;
