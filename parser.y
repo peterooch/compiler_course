@@ -161,24 +161,24 @@ UNARYEXP:
             | '|' EXPR '|'                          {$$ = mknode(STRLEN_N, 1, $2);}
             ;
 ARITHEXPR:    
-              EXPR DIV EXPR                         {$$ = mknode(ARITH_N, 2, $1, $3);}
-            | EXPR MINUS EXPR                       {$$ = mknode(ARITH_N, 2, $1, $3);}
-            | EXPR PLUS EXPR                        {$$ = mknode(ARITH_N, 2, $1, $3);}
-            | EXPR MUL EXPR                         {$$ = mknode(ARITH_N, 2, $1, $3);}
+              EXPR DIV EXPR                         {$$ = mknode(DIV_N, 2, $1, $3);}
+            | EXPR MINUS EXPR                       {$$ = mknode(MINUS_N, 2, $1, $3);}
+            | EXPR PLUS EXPR                        {$$ = mknode(PLUS_N, 2, $1, $3);}
+            | EXPR MUL EXPR                         {$$ = mknode(MUL_N, 2, $1, $3);}
             ;
 BOOLEXPR:  
-              EXPR AND EXPR                         {$$ = mknode(LOGICAL_N, 2, $1, $3);}
-            | EXPR OR EXPR                          {$$ = mknode(LOGICAL_N, 2, $1, $3);}
-            | EXPR EQ EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);}
-            | EXPR NE EXPR                          {$$ = mknode(COMP_N, 2, $1, $3);}
-            | EXPR GT EXPR                          {$$ = mknode(ARITHCOMP_N, 2, $1, $3);}
-            | EXPR GE EXPR                          {$$ = mknode(ARITHCOMP_N, 2, $1, $3);};
-            | EXPR LT EXPR                          {$$ = mknode(ARITHCOMP_N, 2, $1, $3);};
-            | EXPR LE EXPR                          {$$ = mknode(ARITHCOMP_N, 2, $1, $3);};
+              EXPR AND EXPR                         {$$ = mknode(LOGICALAND_N, 2, $1, $3);}
+            | EXPR OR EXPR                          {$$ = mknode(LOGICALOR_N, 2, $1, $3);}
+            | EXPR EQ EXPR                          {$$ = mknode(EQ_N, 2, $1, $3);}
+            | EXPR NE EXPR                          {$$ = mknode(NE_N, 2, $1, $3);}
+            | EXPR GT EXPR                          {$$ = mknode(GT_N, 2, $1, $3);}
+            | EXPR GE EXPR                          {$$ = mknode(GE_N, 2, $1, $3);};
+            | EXPR LT EXPR                          {$$ = mknode(LT_N, 2, $1, $3);};
+            | EXPR LE EXPR                          {$$ = mknode(LE_N, 2, $1, $3);};
             ;
 UNARYOPS:    
-              PLUS EXPR                             {$$ = mknode(UNARYEXPR_N, 1, $2);}
-            | MINUS EXPR                            {$$ = mknode(UNARYEXPR_N, 1, $2);}
+              PLUS EXPR                             {$$ = mknode(UNARYPLUS_N, 1, $2);}
+            | MINUS EXPR                            {$$ = mknode(UNARYMINUS_N, 1, $2);}
             | NOT EXPR                              {$$ = mknode(NOT_N, 1, $2);}
             ;        
 TYPE:       

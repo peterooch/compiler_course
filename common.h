@@ -26,17 +26,27 @@ typedef enum _NodeType
     tINTPTR_N, tCHARPTR_N, tREALPTR_N, // DONE
     ASS_N, // DONE
     EXPR_N, // Everything bigger than this is an expression, NOT TO BE USED directly
-    LOGICAL_N, // DONE
-    COMP_N, // DONE
-    ARITHCOMP_N, // DONE
-    ARITH_N, // DONE
+    LOGICALAND_N, // DONE
+    LOGICALOR_N,
+    FIRST_BINARY,
+    EQ_N = FIRST_BINARY, // DONE
+    NE_N,
+    GT_N,
+    GE_N,
+    LT_N,
+    LE_N,
+    MUL_N, // DONE
+    DIV_N,
+    PLUS_N,
+    MINUS_N,
     NOT_N, // DONE
     ADDRESS_N, // DONE
     DEREF_N, // DONE
     STRLEN_N, // DONE
     IDENTIFIER_N, // DONE
     ARITHEXPR_N, // DONE
-    UNARYEXPR_N, // DONE
+    UNARYPLUS_N, // DONE
+    UNARYMINUS_N,//DONE
     NULLPTR_N, // DONE
     BOOLLITERAL_N, // DONE
     CHARLITERAL_N, // DONE
@@ -81,7 +91,6 @@ typedef enum _Type
 #define ISPTR(x)     (x & PBIT)
 #define TOPTR(x)     (x | PBIT)
 #define TOSCALAR(x)  (x & ~PBIT)
-
 #define isnum(x) (x == tINT || x == tREAL)
 #define CALLABLE_FLAG (1 << 0)
 typedef struct _table_entry
@@ -105,10 +114,10 @@ typedef struct _scopestack
     struct _scopestack* next;
 } scopestack, *scopestack_ptr;
 
-Type verify_call(node* call_expr);
-Type evaltype(node* expr);
+Type verify_call(node* call_expr, FILE* f, str* t);
+Type evaltype(node* expr, FILE* f, str* t);
 void analyzer(node* n);
-void process_node(node* n);
+void process_node(node* n, FILE* f);
 
 #define CALLABLE_ID 0
 #define FUNC_TYPE 1

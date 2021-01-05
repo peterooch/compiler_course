@@ -214,15 +214,31 @@ table_entry* find_symbol(const str identifier)
     return NULL;
 }
 /* End of Scope stack implementation code */
+str freshvar()
+{
+    static int curr = 0;
+    str var = calloc(4, sizeof(char));
 
+    sprintf(var, "t%d", curr++);
+    return var;
+}
+str freshlabel()
+{
+    static int curr = 0;
+    str var = calloc(4, sizeof(char));
+
+    sprintf(var, "L%d", curr++);
+    return var;
+}
 /* AST Semantic analysis code */
-Type verify_call(node* call_expr)
+   str* dummy;
+Type verify_call(node* call_expr, FILE* f, str* t)
 {
     node* call_args;
     table_entry* callable;
     Type* callable_params;
     const str identifier = call_expr->children[0]->data;
-
+    str temp;
     callable = find_symbol(identifier);
 
     if (!callable)
@@ -241,33 +257,45 @@ Type verify_call(node* call_expr)
 
     for (int i = 0; i < callable->nparameters; i++)
     {
-        if (callable_params[i] != evaltype(call_args->children[i]))
+        if (callable_params[i] != evaltype(call_args->children[i], f , &temp))
             error("Line %d: Call to %s, Argument no. %d: Type mismatch.", call_expr->line, identifier, i + 1);
+        fprintf(f,"\tPushParam %s\n", temp);
     }
+    *t = freshvar();
+    fprintf(f,"\t%s = LCall %s\n",*t,identifier);
+    fprintf(f,"\tPopParams %d\n",callable->nparameters*8);
     return callable->type;
 }
 
 #define LEFT  0
 #define RIGHT 1
 /* Expression evaluator, returns the type of expression if its a proper expression */
-Type evaltype(node* expr)
+Type evaltype(node* expr, FILE* f, str* t)
 {
+    static const str ops[] = {"==", "!=", ">", ">=", "<", "<=", "*", "/", "+", "-"};
     NodeType ntype = expr->nodetype;
+    str temp;
 
     switch (ntype)
     {   
         /* Simple values (literals) */
         case NULLPTR_N:
+            *t = expr->data;
             return tNULLPTR;
         case BOOLLITERAL_N:
+            *t = expr->data;
             return tBOOL;
         case CHARLITERAL_N:
+            *t = expr->data;
             return tCHAR;
         case INTLITERAL_N:
+            *t = expr->data;
             return tINT;
         case REALLITERAL_N:
+            *t = expr->data;
             return tREAL;
         case STRINGLITERAL_N:
+            *t = expr->data;        
             return tSTRING;
 
         case IDENTIFIER_N:
@@ -279,29 +307,72 @@ Type evaltype(node* expr)
             /* This kind of stuff is being dealt by the CALL_N clauses */
             if (entry->flags & CALLABLE_FLAG) 
                 error("Line %d: Identifier %s is function/procedure", expr->line, expr->data);
-
+            *t = expr->data;
             return entry->type;
         }
         /* Binary operators */
-        case LOGICAL_N:
-        case COMP_N:
-        case ARITHCOMP_N:
-        case ARITH_N:
+        case LOGICALAND_N:
+        case LOGICALOR_N:
         {
             Type left, right;
-            left  = evaltype(expr->children[LEFT]);
-            right = evaltype(expr->children[RIGHT]);
+            str tleft, tright;
+            str l1 = freshlabel();
+            str l2 = freshlabel();
+            *t = freshvar();   
+            
+            if (ntype == LOGICALOR_N)
+            {
+                left  = evaltype(expr->children[LEFT], f, &tleft);
+                fprintf(f, "\tif %s Goto %s\n", tleft, l1);
+                right = evaltype(expr->children[RIGHT], f, &tright);
+                fprintf(f, "\tif %s Goto %s\n", tright, l1);
+                fprintf(f, "\t%s = false\n", *t);
+                fprintf(f, "\tGoto %s\n", l2);
+                fprintf(f, "\t%s:%s = true\n",l1, *t);
+                fprintf(f, "\t%s:", l2);
+            }
+            else
+            {
+                left  = evaltype(expr->children[LEFT], f, &tleft);
+                fprintf(f, "\tif %s == false Goto %s\n", tleft, l1);
+                right = evaltype(expr->children[RIGHT], f, &tright);
+                fprintf(f, "\tif %s == false Goto %s\n", tright, l1);
+                fprintf(f, "\t%s = true\n", *t);
+                fprintf(f, "\tGoto %s\n", l2);
+                fprintf(f, "\t%s:%s = false\n", l1, *t);
+                fprintf(f, "\t%s:", l2);
+            }
+            if (left != tBOOL || right != tBOOL)
+                error("Line %d: Logical operation requires 2 boolean operands", expr->line);
+            return tBOOL;
+        }
+        case EQ_N:
+        case NE_N:
+        case GT_N:
+        case GE_N:
+        case LT_N:
+        case LE_N:
+        case MUL_N:
+        case DIV_N:
+        case PLUS_N:
+        case MINUS_N:
+        {
+            Type left, right;
+            str tleft, tright;
+            left  = evaltype(expr->children[LEFT], f, &tleft);
+            right = evaltype(expr->children[RIGHT], f, &tright);
 
             if (left == tSTRING || right == tSTRING)
                 error("Line %d: Binary operators are not supported with strings", expr->line);
 
+            *t = freshvar();
+            fprintf(f, "\t%s = %s %s %s\n", *t, tleft, ops[ntype - FIRST_BINARY], tright);
+
             switch (ntype)
             {
-                case LOGICAL_N:
-                    if (left != tBOOL || right != tBOOL)
-                        error("Line %d: Logical operation requires 2 boolean operands", expr->line);
-                    break;
-                case COMP_N:
+
+                case EQ_N:
+                case NE_N:
                     if ((left != right) &&
                         !(left == tNULLPTR && ISPTR(right)) &&
                         !(right == tNULLPTR && ISPTR(left)))
@@ -309,52 +380,68 @@ Type evaltype(node* expr)
                         error("Line %d: Mismatched types in comparison", expr->line);
                     }
                     break;
-                case ARITHCOMP_N:
+                case GT_N:
+                case GE_N:
+                case LT_N:
+                case LE_N:
                     if ((left != tREAL && left != tINT) ||
                         (right != tREAL && right != tINT))
                     {
                         error("Line %d: Arithmetic comparison with non int/real operands", expr->line);
                     }
                     break;
-                case ARITH_N:
-                    if ((left != tREAL && left != tINT) ||
-                        (right != tREAL && right != tINT))
+                case MUL_N:
+                case DIV_N:
+                case PLUS_N:
+                case MINUS_N:
                     {
-                        error("Line %d: Arithmetic operation with non int/real operands", expr->line);
+                        if ((left != tREAL && left != tINT) ||
+                            (right != tREAL && right != tINT))
+                        {
+                            error("Line %d: Arithmetic operation with non int/real operands", expr->line);
+                        }
+                        return (left == tINT && right == tINT) ? tINT : tREAL;
                     }
-                    return (left == tINT && right == tINT) ? tINT : tREAL;
             }
             return tBOOL;
         }
         case STRLEN_N:
         {
-            if (evaltype(expr->children[0]) != tSTRING)
+            if (evaltype(expr->children[0], f , &temp) != tSTRING)
                 error("Line %d: Cannot use | | operation on non-string values", expr->line);
             return tINT;
         }
         case NOT_N:
         {
-            if (evaltype(expr->children[0]) != tBOOL)
+            if (evaltype(expr->children[0], f, &temp) != tBOOL)
                 error("Line %d: Cannot use ! on a non boolean values", expr->line);
+            *t = freshvar();
+            fprintf(f,"\t%s = !%s\n", *t,temp);
             return tBOOL;
         }
-        case UNARYEXPR_N:
+        case UNARYPLUS_N:
+        case UNARYMINUS_N:
         {
-            Type type = evaltype(expr->children[0]);
+            Type type = evaltype(expr->children[0], f, &temp);
             if (type != tREAL && type != tINT)
                 error("Line %d: Cannont use unary +/- on non int/real operand", expr->line);
+            *t = freshvar();
+            if (ntype == UNARYMINUS_N)
+                fprintf(f, "\t%s = 0 - %s\n",*t,temp);
+            else
+                fprintf(f, "\t%s = 0 + %s\n",*t,temp);
             return type;
         }
         case CALL_N:
         {
-            Type type = verify_call(expr);
+            Type type = verify_call(expr, f, t);
             if (type == tVOID)
                 error("Line %d: Cannot evaluate call of procedure %s.", expr->line, expr->children[0]->data);
             return type;
         }
         case ADDRESS_N:
         {
-            Type t = evaltype(expr->children[0]);
+            Type t = evaltype(expr->children[0], f , dummy);
             if (expr->nchildren == 1)
             {
                 if (t != tINT && t != tCHAR && t != tREAL)
@@ -363,13 +450,13 @@ Type evaltype(node* expr)
             }
             if (t != tSTRING)
                 error("Line %d: operator &[] must be a string.", expr->line);
-            if (evaltype(expr->children[1]) != tINT)
+            if (evaltype(expr->children[1], f , dummy) != tINT)
                 error("Line %d: operator &[] must have a int index", expr->line);
             return tCHARPTR;
         }
         case DEREF_N:
         {
-            Type t = evaltype(expr->children[0]);
+            Type t = evaltype(expr->children[0], f , dummy);
             if (!ISPTR(t))
                 error("Line %d: operator ^ can not be used on non-pointer types", expr->line);
             if (t != tINTPTR && t != tREALPTR && t != tCHARPTR)
@@ -378,9 +465,9 @@ Type evaltype(node* expr)
         }
         case ARRAY_ACCESS_N:
         {
-            if (evaltype(expr->children[0]) != tSTRING)
+            if (evaltype(expr->children[0], f , dummy) != tSTRING)
                 error("Line %d: operator [] can be only used on strings.", expr->line);
-            if (evaltype(expr->children[1]) != tINT)
+            if (evaltype(expr->children[1], f , dummy) != tINT)
                 error("Line %d: operator [] can only receive a int as index position.", expr->line);
             
             return tCHAR;
@@ -396,6 +483,8 @@ int main_defined = 0;
 /* AST Processing entry-point */
 void analyzer(node* n)
 {
+    FILE* file = fopen("output.txt","w");
+
     if (!n ||  n->nodetype != CODE_N)
         simple_error("Bad AST was given to analyzer()");
     
@@ -403,27 +492,27 @@ void analyzer(node* n)
     scope_push();
 
     for (int i = 0; i < n->nchildren; i++)
-        process_node(n->children[i]);
+        process_node(n->children[i], file);
 
     if (!main_defined)
         simple_error("Main() procedure was not defined.");
 
     /* Pop global scope */
     scope_pop();
-
+    fclose(file);
     printf("AST processing finished without issues.\n");
 }
 
 #define LAST(n) n->children[n->nchildren-1]
 /* Central AST processor, in preorder processes statements and declerations */
-void process_node(node* n)
+void process_node(node* n, FILE* f)
 {
     static int no_push = 0;
     int i, j, done;
     table_entry* entry;
     node *plist, *vl;
     Type type;
-
+    str t;
     if (!n)
         return;
 
@@ -479,11 +568,16 @@ void process_node(node* n)
             /* Set scope return type */
             stack->return_type = entry->type;
             no_push = 1; /* avoids things such as proc f(x:int) { var x: bool; ...} */
+            
+            fprintf(f, "%s:\n\tBeginFunc\n", entry->identifier);
+
             /* Add parameters to new scope's symtable */
-            process_node(n->children[IS_FUNC(n) ? FUNC_PARAMS : PROC_PARAMS]);
+            process_node(n->children[IS_FUNC(n) ? FUNC_PARAMS : PROC_PARAMS], f);
             /* Process function block */
-            process_node(n->children[IS_FUNC(n) ? FUNC_BLOCK : PROC_BLOCK]);
+            process_node(n->children[IS_FUNC(n) ? FUNC_BLOCK : PROC_BLOCK], f);
             /* Pop callable scope, Should be popped by ^ BLOCK_N clause */
+            
+            fprintf(f, "\tEndFunc\n");
 
             if (!IS_FUNC(n))
                 break;
@@ -514,10 +608,9 @@ void process_node(node* n)
             if (stack->return_type == tVOID)
                 error("Line %d: Cannot return in a procedure", n->line);
 
-            if (evaltype(n->children[0]) != stack->return_type)
             if (rt != st && !(isnum(rt) && isnum(st)))
                 error("Line %d: Return value type does not match function return type", n->line);
-            
+            fprintf(f,"\tReturn %s\n",t);
             break;
         }
         case BLOCK_N:
@@ -535,7 +628,7 @@ void process_node(node* n)
             }
 
             for (i = 0; i < n->nchildren; i++)
-                process_node(n->children[i]);
+                process_node(n->children[i], f);
 
             if (n->nodetype == BLOCK_N)
                 scope_pop();
@@ -559,36 +652,58 @@ void process_node(node* n)
         }
         case IF_N:
         case IFELSE_N:
-        case WHILE_N:
         {
-            type = evaltype(n->children[0]);
-
+            str t, l1, l2;
+            type = evaltype(n->children[0], f , &t);
             if (type != tBOOL)
                 error("Line %d: Conditional expression must be boolean", n->children[0]->line);
 
-            process_node(n->children[1]);
-
+            l1 = freshlabel();
+            l2 = freshlabel();
+            fprintf(f, "\tif %s == false Goto %s\n", t, l1);
+            process_node(n->children[1], f);
             if (n->nodetype == IFELSE_N)
-                process_node(n->children[2]);
-
+            {
+                fprintf(f, "\tGoto %s\n", l2);
+            }
+            fprintf(f, "\t%s:", l1);
+            if (n->nodetype == IFELSE_N)
+            {
+                process_node(n->children[2], f);
+                fprintf(f, "\t%s:", l2);
+            }            
+            break;
+        } 
+        case WHILE_N:
+        {
+            str t, l1, l2, l3;
+            type = evaltype(n->children[0], f , &t);
+            if (type != tBOOL)
+                error("Line %d: Conditional expression must be boolean", n->children[0]->line);
+            l1 = freshlabel();
+            l2 = freshlabel();
+            l3 = freshlabel();
+            fprintf(f, "\n\t%s:if %s Goto %s\n", l3, t, l1);
+            fprintf(f, "\tGoto %s\n\t%s:",l2, l1);
+            process_node(n->children[1], f);
+            fprintf(f, "\tGoto %s\n\t%s:",l3, l2);
             break;
         }
         case ASSIGNMENT_N:
         {
             table_entry* id = find_symbol(n->children[0]->data);
-
             if (id == NULL)
                 error("Line %d: Identifier %s is not defined", n->line, n->children[0]->data);
 
             if (id->flags & CALLABLE_FLAG)
                 error("Line %d: Identifier %s is a procedure/function", n->line, n->children[0]->data);
 
-            type = evaltype(n->children[1]);
+            type = evaltype(n->children[1], f , &t);
 
-            if (!(type == id->type || (ISPTR(id->type) && type == tNULLPTR)))
             if (!((isnum(type) && isnum(id->type)) || type == id->type || (ISPTR(id->type) && type == tNULLPTR)))
                 error("Line %d: Type mismatch in assignment", n->line);
 
+            fprintf(f, "\t%s = %s\n", id->identifier, t);
             break;
         }
         case ASSIGNMENT_BYINDEX_N:
@@ -601,17 +716,17 @@ void process_node(node* n)
                 error("Line %d: Identifier %s is a procedure/function", n->line, n->children[0]->data);
             if (id->type != tSTRING)
                 error("Line %d: Identifier %s is not a string", n->line, n->children[0]->data);
-            if (evaltype(n->children[1]) != tINT)
+            if (evaltype(n->children[1], f , dummy) != tINT)
                 error("Line %d: Index value must be an int", n->line);
-            if (evaltype(n->children[2]) != tCHAR)
+            if (evaltype(n->children[2], f , dummy) != tCHAR)
                 error("Line %d: Assignment value must be an char", n->line);
             break;
         }
         case ASSIGNMENT_DEREF_N:
         {
             Type to, from;
-            to = evaltype(n->children[0]);
-            from = evaltype(n->children[1]);
+            to = evaltype(n->children[0], f , dummy);
+            from = evaltype(n->children[1], f , dummy);
             if (!ISPTR(to))
                 simple_error("Destination is not a pointer");
             to = TOSCALAR(to);
@@ -623,7 +738,7 @@ void process_node(node* n)
         }
         case CALL_N:
         {
-            verify_call(n);
+            verify_call(n, f , &t);
             break;
         }
         default:
