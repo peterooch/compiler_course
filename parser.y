@@ -158,7 +158,7 @@ POINTEREXPR:
             ;
 UNARYEXP:   
               UNARYOPS
-            | '|' EXPR '|'                          {$$ = mknode(STRLEN_N, 1, $2);}
+            | '|' ID '|'                            {$$ = mknode(STRLEN_N, 1, $2);}
             ;
 ARITHEXPR:    
               EXPR DIV EXPR                         {$$ = mknode(DIV_N, 2, $1, $3);}
