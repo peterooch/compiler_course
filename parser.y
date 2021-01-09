@@ -224,7 +224,7 @@ int yyerror()
 node* mkleaf_str(NodeType nodetype, const str data)
 {
     node* temp = mknode(nodetype, 0);
-    temp->data = strdup(data);
+    temp->data = (str)strdup(data);
     return temp;
 }
 

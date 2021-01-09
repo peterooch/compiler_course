@@ -1,0 +1,45 @@
+
+M2:
+		BeginFunc
+		b = '&'
+		t0 = y * 7
+		t1 = t0 / a
+		t2 = t1 - y
+		a = t2
+		Return res
+		EndFunc
+	
+C30:
+		BeginFunc
+	
+F15:
+		BeginFunc
+		k = '@'
+		t3 = l + l
+		i = t3
+		t5 = k == '*'
+		if t5 Goto L0
+		t7 = x != false
+		if t7 == false Goto L2
+		t8 = l + m
+		t9 = t8 < i
+		if t9 == false Goto L2
+		t6 = true
+		Goto L3
+		L2:t6 = false
+	L3:	if t6 Goto L0
+		t4 = false
+		Goto L1
+		L0:t4 = true
+	L1:	if t4 == false Goto L4
+		t10 = l < m
+		x = t10
+		L4:	Return x
+		EndFunc
+		PushParam 5
+		PushParam i
+		PushParam j
+		t11 = LCall F15
+		PopParams 24
+		k = t11
+	

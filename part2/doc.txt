@@ -8,7 +8,7 @@ proc Main()
     var x: bool;
     x = one();
 }
-Output Message: ERROR 1009: Line 8: Type mismatch in assignment
+Output Message: ERROR 1171: Line 8: Type mismatch in assignment
 
 Input file: (test11f.txt)
 proc Main()
@@ -18,7 +18,7 @@ proc Main()
         /% something %/
     }
 }
-Output Message: ERROR 987: Line 3: Conditional expression must be boolean
+Output Message: ERROR 1126: Line 3: Conditional expression must be boolean
 
 Input file: (test12f.txt)
 proc Main()
@@ -28,7 +28,7 @@ proc Main()
         /% something %/
     }
 }
-Output Message: ERROR 987: Line 3: Conditional expression must be boolean
+Output Message: ERROR 1149: Line 3: Conditional expression must be boolean
 
 Input file: (test13f1.txt)
 proc Main()
@@ -36,7 +36,7 @@ proc Main()
     var x: string[100];
     x['a'] = 'a';
 }
-Output Message: ERROR 1024: Line 4: Index value must be an int
+Output Message: ERROR 1187: Line 4: Index value must be an int
 
 Input file: (test13s.txt)
 proc Main()
@@ -52,7 +52,7 @@ proc Main()
     var x: int;
     x[4] = 4;
 }
-Output Message: ERROR 1022: Line 4: Identifier x is not a string
+Output Message: ERROR 1185: Line 4: Identifier x is not a string
 
 Input file: (test15f.txt)
 proc Main()
@@ -63,7 +63,7 @@ proc Main()
     b = 1.01;
     a = &b;
 }
-Output Message: ERROR 1009: Line 7: Type mismatch in assignment
+Output Message: ERROR 1171: Line 7: Type mismatch in assignment
 
 Input file: (test15s.txt)
 proc Main()
@@ -96,7 +96,7 @@ proc Main()
     var b : bool;
     b = 3 == 3.0;
 }
-Output Message: ERROR 733: Line 4: Mismatched types in comparison
+Output Message: ERROR 818: Line 4: Mismatched types in comparison
 
 Input file: (test16f2.txt)
 proc Main()
@@ -104,7 +104,7 @@ proc Main()
     var b : bool;
     b = 3 && 3.0;
 }
-Output Message: ERROR 726: Line 4: Logical operation requires 2 boolean operands
+Output Message: ERROR 784: Line 4: Logical operation requires 2 boolean operands
 
 Input file: (test16f3.txt)
 proc Main()
@@ -112,7 +112,7 @@ proc Main()
     var b : bool;
     b = 3 + 'a';
 }
-Output Message: ERROR 747: Line 4: Arithmetic operation with non int/real operands
+Output Message: ERROR 839: Line 4: Arithmetic operation with non int/real operands
 
 Input file: (test16s.txt)
 proc Main()
@@ -159,7 +159,7 @@ proc Main()
     b = false;
     a = &b;
 }
-Output Message: ERROR 785: Line 7: operator & must be used on int, char or real.
+Output Message: ERROR 894: Line 7: operator & must be used on int, char or real.
 
 Input file: (test1f.txt)
 proc Main()
@@ -170,14 +170,14 @@ proc Main()
         /% dummy %/
     }
 }
-Output Message: ERROR 880: Line 4: Main() is already defined
+Output Message: ERROR 1003: Line 4: Main() is already defined
 
 Input file: (test1f2.txt)
 proc foo()
 {
     
 }
-Output Message: ERROR 833: Main() procedure was not defined.
+Output Message: ERROR 956: Main() procedure was not defined.
 
 Input file: (test1s.txt)
 proc Main()
@@ -191,7 +191,7 @@ proc Main(x: int)
 {
     
 }
-Output Message: ERROR 882: Line 1: Main() should not have parameters
+Output Message: ERROR 1005: Line 1: Main() should not have parameters
 
 Input file: (test3f.txt)
 proc foo(x: int)
@@ -202,7 +202,7 @@ func foo(x: int) return int
 {
     return x;
 }
-Output Message: ERROR 866: Line 5: Identifier foo exists already in current scope
+Output Message: ERROR 989: Line 5: Identifier foo exists already in current scope
 
 Input file: (test4f.txt)
 proc Main()
@@ -212,7 +212,7 @@ proc Main()
 
     x = x;
 }
-Output Message: ERROR 976: Line 4: Identifier x exists already in current scope
+Output Message: ERROR 1110: Line 4: Identifier x exists already in current scope
 
 Input file: (test5f.txt)
 proc Main()
@@ -224,7 +224,7 @@ proc foo()
 {
     foo();
 }
-Output Message: ERROR 653: Line 3, Identifier foo does not exists.
+Output Message: ERROR 682: Line 3, Identifier foo does not exists.
 
 Input file: (test6f.txt)
 proc foo(x, y: int)
@@ -232,7 +232,7 @@ proc foo(x, y: int)
     z = x + y;
 }
 proc Main() {}
-Output Message: ERROR 1001: Line 3: Identifier z is not defined
+Output Message: ERROR 1163: Line 3: Identifier z is not defined
 
 Input file: (test7f.txt)
 
@@ -244,7 +244,7 @@ proc Main()
 {
     foo(1,2,3,4);
 }
-Output Message: ERROR 662: Line 8: Call to foo: Too much arguments.
+Output Message: ERROR 691: Line 8: Call to foo: Too much arguments.
 
 Input file: (test8f.txt)
 proc foo(x,y,z:int)
@@ -255,7 +255,7 @@ proc Main()
 {
     foo(1, true,'a');
 }
-Output Message: ERROR 669: Line 7: Call to foo, Argument no. 2: Type mismatch.
+Output Message: ERROR 699: Line 7: Call to foo, Argument no. 2: Type mismatch.
 
 Input file: (test9f1.txt)
 func foo() return int
@@ -266,7 +266,7 @@ proc Main()
 {
 
 }
-Output Message: ERROR 939: Line 3: Return value type does not match function return type
+Output Message: ERROR 1070: Line 3: Return value type does not match function return type
 
 Input file: (test9f2.txt)
 func foo() return string
@@ -277,7 +277,7 @@ proc Main()
 {
 
 }
-Output Message: ERROR 870: Line 1: Functions can not return strings.
+Output Message: ERROR 993: Line 1: Functions can not return strings.
 
 Input file: (test9f3.txt)
 proc foo()
@@ -288,7 +288,7 @@ proc Main()
 {
 
 }
-Output Message: ERROR 936: Line 3: Cannot return in a procedure
+Output Message: ERROR 1067: Line 3: Cannot return in a procedure
 
 Input file: (testfib.txt)
 func fib_rec(n: int) return int

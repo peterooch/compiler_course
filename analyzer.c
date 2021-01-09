@@ -1,11 +1,13 @@
 #include "common.h"
 
 /* Error pretty-printing */
-static inline void int_error(int line, const str message)
+const str threeac_file = "3ac_temp.txt";
+static void int_error(int line, const str message)
 {
     /* Print message to user, use parser line as fancy "error code" */
     printf("ERROR %d: %s\n", line, message);
     /* There is nothing more to do... close down */
+    remove(threeac_file);
     exit(EXIT_FAILURE);
 }
 static char msg[512];
@@ -16,7 +18,7 @@ static char msg[512];
 #define simple_error(message) \
         int_error(__LINE__, message)
 
-static inline Type nodetypetotype(NodeType n)
+static Type nodetypetotype(NodeType n)
 {
     switch (n)
     {
@@ -40,7 +42,7 @@ static inline Type nodetypetotype(NodeType n)
 table_entry* alloc_entry(const node* n, NodeType type)
 {
     table_entry* entry = (table_entry*)calloc(1, sizeof(table_entry));
-    entry->identifier = strdup(n->data);
+    entry->identifier = (str)strdup(n->data);
     entry->height = 1;
     entry->type = nodetypetotype(type);
     return entry;
@@ -224,14 +226,13 @@ str freshvar()
 }
 str freshlabel()
 {
-    static int curr = 0;
+    static int lcurr = 0;
     str var = calloc(4, sizeof(char));
 
-    sprintf(var, "L%d", curr++);
+    sprintf(var, "L%d", lcurr++);
     return var;
 }
 /* AST Semantic analysis code */
-   str* dummy;
 Type verify_call(node* call_expr, FILE* f, str* t)
 {
     node* call_args;
@@ -240,6 +241,7 @@ Type verify_call(node* call_expr, FILE* f, str* t)
     const str identifier = call_expr->children[0]->data;
     str temp;
     callable = find_symbol(identifier);
+    int i;
 
     if (!callable)
         error("Line %d, Identifier %s does not exists.", call_expr->line, identifier);
@@ -255,9 +257,10 @@ Type verify_call(node* call_expr, FILE* f, str* t)
               call_expr->line, identifier, (call_args->nchildren > callable->nparameters) ? "Too much": "Not enough");
     }
 
-    for (int i = 0; i < callable->nparameters; i++)
+    for (i = 0; i < callable->nparameters; i++)
     {
-        if (callable_params[i] != evaltype(call_args->children[i], f , &temp))
+        Type arg_type = evaltype(call_args->children[i], f ,&temp);
+        if (callable_params[i] != arg_type && !(isnum(arg_type) && isnum(callable_params[i])))
             error("Line %d: Call to %s, Argument no. %d: Type mismatch.", call_expr->line, identifier, i + 1);
         fprintf(f,"\tPushParam %s\n\t", temp);
     }
@@ -328,8 +331,8 @@ Type evaltype(node* expr, FILE* f, str* t)
                 fprintf(f, "\tif %s Goto %s\n\t", tright, l1);
                 fprintf(f, "\t%s = false\n\t", *t);
                 fprintf(f, "\tGoto %s\n\t", l2);
-                fprintf(f, "\t%s:%s = true\n",l1, *t);
-                fprintf(f, "\t%s:", l2);
+                fprintf(f, "%s:\t%s = true\n\t", l1, *t);
+                fprintf(f, "%s:", l2);
             }
             else
             {
@@ -339,8 +342,8 @@ Type evaltype(node* expr, FILE* f, str* t)
                 fprintf(f, "\tif %s == false Goto %s\n\t", tright, l1);
                 fprintf(f, "\t%s = true\n\t", *t);
                 fprintf(f, "\tGoto %s\n\t", l2);
-                fprintf(f, "\t%s:%s = false\n", l1, *t);
-                fprintf(f, "\t%s:", l2);
+                fprintf(f, "%s:\t%s = false\n\t", l1, *t);
+                fprintf(f, "%s:", l2);
             }
             if (left != tBOOL || right != tBOOL)
                 error("Line %d: Logical operation requires 2 boolean operands", expr->line);
@@ -370,7 +373,6 @@ Type evaltype(node* expr, FILE* f, str* t)
 
             switch (ntype)
             {
-
                 case EQ_N:
                 case NE_N:
                     if ((left != right) &&
@@ -502,7 +504,9 @@ int main_defined = 0;
 /* AST Processing entry-point */
 void analyzer(node* n)
 {
-    FILE* file = fopen("output.txt","w");
+    int i;
+    char c;
+    FILE* file = fopen(threeac_file,"w");
 
     if (!n ||  n->nodetype != CODE_N)
         simple_error("Bad AST was given to analyzer()");
@@ -510,7 +514,7 @@ void analyzer(node* n)
     /* Push global scope */
     scope_push();
 
-    for (int i = 0; i < n->nchildren; i++)
+    for (i = 0; i < n->nchildren; i++)
         process_node(n->children[i], file);
 
     if (!main_defined)
@@ -519,7 +523,11 @@ void analyzer(node* n)
     /* Pop global scope */
     scope_pop();
     fclose(file);
-    printf("AST processing finished without issues.\n");
+    file = fopen(threeac_file, "r");
+    while ((c = fgetc(file)) != EOF)
+        printf("%c",c);
+    fclose(file);
+    remove(threeac_file);
 }
 
 #define LAST(n) n->children[n->nchildren-1]
@@ -692,26 +700,27 @@ void process_node(node* n, FILE* f)
             process_node(n->children[1], f);
             if (n->nodetype == IFELSE_N)
             {
-                fprintf(f, "\tGoto %s\n", l2);
+                fprintf(f, "\tGoto %s\n\t", l2);
             }
-            fprintf(f, "\t%s:", l1);
+            fprintf(f, "%s:", l1);
             if (n->nodetype == IFELSE_N)
             {
                 process_node(n->children[2], f);
-                fprintf(f, "\t%s:", l2);
+                fprintf(f, "%s:", l2);
             }            
             break;
         } 
         case WHILE_N:
         {
             str t, l1, l2, l3;
-            type = evaltype(n->children[0], f , &t);
-            if (type != tBOOL)
-                error("Line %d: Conditional expression must be boolean", n->children[0]->line);
             l1 = freshlabel();
             l2 = freshlabel();
             l3 = freshlabel();
-            fprintf(f, "\n\t%s:if %s Goto %s\n\t", l3, t, l1);
+            fprintf(f, "%s:", l3);
+            type = evaltype(n->children[0], f , &t);
+            if (type != tBOOL)
+                error("Line %d: Conditional expression must be boolean", n->children[0]->line);
+            fprintf(f, "\tif %s Goto %s\n\t", t, l1);
             fprintf(f, "\tGoto %s\n\t%s:",l2, l1);
             process_node(n->children[1], f);
             fprintf(f, "\tGoto %s\n\t%s:",l3, l2);
